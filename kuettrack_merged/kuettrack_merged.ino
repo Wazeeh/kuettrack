@@ -29,6 +29,7 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Preferences.h>
@@ -44,8 +45,8 @@
 #define WIFI_PASSWORD  "Symphony23"
 
 // ─── Backend ──────────────────────────────────────────────────────────
-#define API_BASE_URL   "http://YOUR_BACKEND_IP:5000"
-#define GPS_SERVER_URL "http://YOUR_BACKEND_IP:5000/api/gps/update"
+#define API_BASE_URL   "https://kuettrack.onrender.com"
+#define GPS_SERVER_URL "https://kuettrack.onrender.com/api/gps/update"
 #define API_TIMEOUT_RFID  8000
 #define API_TIMEOUT_GPS   2000
 #define API_TIMEOUT_CMD   3000   // command poll is short
@@ -340,9 +341,11 @@ void authenticateRfidCard(String uid) {
     return;
   }
 
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(API_TIMEOUT_RFID);
-  http.begin(String(API_BASE_URL) + "/api/auth/user-by-rfid/" + uid);
+  http.begin(client, String(API_BASE_URL) + "/api/auth/user-by-rfid/" + uid);
   http.addHeader("Content-Type", "application/json");
   int    code     = http.GET();
   String response = http.getString();
@@ -384,9 +387,11 @@ void authenticateRfidCard(String uid) {
 void checkBikeCommand() {
   if (WiFi.status() != WL_CONNECTED) return;
 
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(API_TIMEOUT_CMD);
-  http.begin(String(API_BASE_URL) + "/api/bikes/" + BIKE_ID + "/command");
+  http.begin(client, String(API_BASE_URL) + "/api/bikes/" + BIKE_ID + "/command");
   int    code     = http.GET();
   String response = http.getString();
   http.end();
@@ -434,9 +439,11 @@ void endRide(String uid) {
   lcdMsg("Ending ride...", "Please wait");
   Serial.println("[RIDE] Ending ride for UID: " + uid);
 
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   http.setTimeout(API_TIMEOUT_RFID);
-  http.begin(String(API_BASE_URL) + "/api/rides/end");
+  http.begin(client, String(API_BASE_URL) + "/api/rides/end");
   http.addHeader("Content-Type", "application/json");
 
   String payload = "{\"rfidUid\":\"" + uid +
@@ -540,8 +547,10 @@ void sendGPSData() {
   String body;
   serializeJson(doc, body);
 
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
-  http.begin(GPS_SERVER_URL);
+  http.begin(client, GPS_SERVER_URL);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(API_TIMEOUT_GPS);
   int code = http.POST(body);
