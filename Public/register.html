@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Register — KuetTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #06090f;
+    --bg2: #0c1018;
+    --surface: #161c28;
+    --surface2: #1d2535;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --accent: #00e5a0;
+    --accent2: #0088ff;
+    --accent3: #7c5cfc;
+    --text: #f0f4ff;
+    --text2: #8b95b0;
+    --text3: #5a6175;
+    --ff: 'Syne', sans-serif;
+    --fb: 'DM Sans', sans-serif;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --error: #ff5050;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--fb);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px;
+    background: rgba(6,9,15,0.88); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: var(--ff); font-size: 20px; font-weight: 800;
+    letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .logo span { color: var(--accent); }
+  .topbar-right { font-size: 14px; color: var(--text2); }
+  .topbar-right a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  .topbar-right a:hover { text-decoration: underline; }
+
+  /* ── LAYOUT ── */
+  .page-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    min-height: calc(100vh - 65px);
+  }
+
+  /* ── LEFT COLUMN ── */
+  .left-col {
+    background: var(--bg2); border-right: 1px solid var(--border);
+    padding: 56px 52px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .left-col::before {
+    content: ''; position: absolute; top: -100px; right: -80px;
+    width: 500px; height: 500px;
+    background: radial-gradient(ellipse, rgba(0,136,255,0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .left-col::after {
+    content: ''; position: absolute; bottom: -80px; left: -60px;
+    width: 400px; height: 400px;
+    background: radial-gradient(ellipse, rgba(124,92,252,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .bg-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,136,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,136,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    mask-image: radial-gradient(ellipse 90% 70% at 60% 35%, black 15%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .left-inner { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+  .join-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px 6px 8px;
+    background: rgba(0,136,255,0.08); border: 1px solid rgba(0,136,255,0.2);
+    border-radius: 100px; font-size: 12px; color: var(--accent2);
+    margin-bottom: 28px; width: fit-content;
+  }
+  .join-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.4);} }
+
+  .left-inner h1 {
+    font-family: var(--ff); font-size: clamp(32px, 3vw, 50px);
+    font-weight: 800; line-height: 1.0; letter-spacing: -2.5px; margin-bottom: 18px;
+  }
+  .left-inner h1 .blue { color: var(--accent2); }
+  .left-inner > p {
+    font-size: 15px; color: var(--text2); line-height: 1.75;
+    max-width: 340px; margin-bottom: 44px;
+  }
+
+  /* Journey steps */
+  .journey { display: flex; flex-direction: column; gap: 0; margin-bottom: 36px; }
+  .journey-step {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .journey-step:last-child { border-bottom: none; }
+  .j-num {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    background: rgba(0,136,255,0.1); border: 1px solid rgba(0,136,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--ff); font-size: 12px; font-weight: 700; color: var(--accent2);
+    margin-top: 2px;
+  }
+  .j-body h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .j-body p { font-size: 13px; color: var(--text3); line-height: 1.5; }
+
+  /* Pricing mini-cards */
+  .plan-mini { display: flex; flex-direction: column; gap: 8px; }
+  .plan-mini-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+  .plan-mini-row { display: flex; gap: 8px; }
+  .pmini {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 10px; text-align: center;
+    transition: border-color .2s;
+  }
+  .pmini:hover { border-color: var(--border2); }
+  .pmini-price { font-family: var(--ff); font-size: 18px; font-weight: 800; color: var(--accent); display: block; letter-spacing: -0.5px; }
+  .pmini-name { font-size: 11px; color: var(--text3); margin-top: 2px; display: block; }
+
+  .left-footer { position: relative; z-index: 1; margin-top: 40px; font-size: 12px; color: var(--text3); }
+
+  /* ── RIGHT COLUMN ── */
+  .right-col {
+    padding: 56px 60px 80px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .form-shell {
+    width: 100%; max-width: 460px;
+    animation: slideUp .55s cubic-bezier(.22,.68,0,1.2) both;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(28px);} to{opacity:1;transform:translateY(0);} }
+
+  .form-eyebrow { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent2); font-weight: 600; margin-bottom: 10px; }
+  .form-title { font-family: var(--ff); font-size: 34px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 6px; }
+  .form-sub { font-size: 15px; color: var(--text2); margin-bottom: 36px; }
+  .form-sub a { color: var(--accent); text-decoration: none; }
+  .form-sub a:hover { text-decoration: underline; }
+
+  /* Progress bar */
+  .progress-header { margin-bottom: 36px; }
+  .prog-track {
+    display: flex; align-items: center; gap: 0; margin-bottom: 14px;
+  }
+  .prog-step-wrap { display: flex; align-items: center; flex: 1; }
+  .prog-step-wrap:last-child { flex: none; }
+  .prog-bubble {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    border: 2px solid var(--border2); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--ff); font-size: 12px; font-weight: 700; color: var(--text3);
+    transition: all .3s; position: relative; z-index: 1;
+  }
+  .prog-step-wrap.active .prog-bubble { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.1); }
+  .prog-step-wrap.done .prog-bubble { border-color: var(--accent); background: var(--accent); color: #06090f; }
+  .prog-line { flex: 1; height: 2px; background: var(--border2); transition: background .4s; margin: 0 2px; }
+  .prog-step-wrap.done + .prog-step-wrap .prog-line,
+  .prog-line.done { background: var(--accent); }
+  .prog-labels { display: flex; justify-content: space-between; padding: 0 4px; }
+  .prog-label-item { font-size: 11px; color: var(--text3); text-align: center; flex: 1; transition: color .3s; }
+  .prog-label-item.active { color: var(--accent); }
+  .prog-label-item.done { color: var(--text2); }
+
+  /* Sections */
+  .form-section { display: none; }
+  .form-section.active { display: block; animation: secFade .3s ease; }
+  @keyframes secFade { from{opacity:0;transform:translateX(10px);} to{opacity:1;transform:translateX(0);} }
+
+  .section-heading {
+    font-family: var(--ff); font-size: 14px; font-weight: 700; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 24px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 8px; }
+  .label-opt { font-size: 11px; color: var(--text3); font-weight: 400; }
+
+  .input-wrap { position: relative; }
+  .inp-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 14px; pointer-events: none; opacity: 0.4; line-height: 1;
+  }
+  .form-input, .form-select {
+    width: 100%; padding: 13px 14px 13px 42px;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--fb); font-size: 15px; outline: none;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  .form-select { appearance: none; cursor: pointer; }
+  .form-select option { background: var(--surface2); }
+  .form-input::placeholder { color: var(--text3); }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,0.12);
+    background: var(--surface2);
+  }
+  .form-input.error-state { border-color: var(--error); }
+  .form-input.error-state:focus { box-shadow: 0 0 0 3px rgba(255,80,80,0.1); }
+
+  .eye-btn {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: var(--text3);
+    font-size: 14px; padding: 4px; transition: color .2s;
+  }
+  .eye-btn:hover { color: var(--text2); }
+
+  .err-msg { font-size: 12px; color: var(--error); margin-top: 6px; display: none; }
+  .err-msg.show { display: block; }
+
+  /* Password strength */
+  .strength-wrap { margin-top: 8px; }
+  .strength-segs { display: flex; gap: 4px; }
+  .seg { flex: 1; height: 3px; border-radius: 2px; background: var(--border2); transition: background .3s; }
+  .seg.weak { background: #ff5050; }
+  .seg.fair { background: #ffab00; }
+  .seg.good { background: #00e5a0; }
+  .seg.strong { background: #00e5a0; }
+  .strength-text { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+  /* Plan selector */
+  .plan-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 24px; }
+  .plan-opt {
+    position: relative; border: 2px solid var(--border); border-radius: var(--radius-sm);
+    padding: 18px 12px 14px; text-align: center; cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .plan-opt:hover { border-color: var(--border2); background: var(--surface); }
+  .plan-opt.sel { border-color: var(--accent); background: rgba(0,229,160,0.05); }
+  .plan-opt input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .plan-hot {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #06090f;
+    font-size: 9px; font-weight: 800; padding: 3px 10px;
+    border-radius: 100px; white-space: nowrap; letter-spacing: 0.5px;
+  }
+  .p-price { font-family: var(--ff); font-size: 22px; font-weight: 800; color: var(--accent); display: block; letter-spacing: -0.5px; }
+  .p-name { font-size: 13px; color: var(--text2); display: block; margin: 4px 0 2px; }
+  .p-note { font-size: 11px; color: var(--text3); }
+
+  /* Terms */
+  .terms-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 14px; color: var(--text2); margin-bottom: 8px; cursor: pointer;
+  }
+  .terms-row input { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+  .terms-row a { color: var(--accent); text-decoration: none; }
+  .terms-row a:hover { text-decoration: underline; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; margin-top: 8px; }
+  .btn-back {
+    padding: 13px 22px; border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--text2);
+    font-family: var(--fb); font-size: 15px;
+    border: 1px solid var(--border2); cursor: pointer;
+    transition: background .2s, color .2s;
+    white-space: nowrap;
+  }
+  .btn-back:hover { background: var(--surface2); color: var(--text); }
+  .btn-next, .btn-submit-final {
+    flex: 1; padding: 13px 20px;
+    background: var(--accent); color: #06090f;
+    font-family: var(--fb); font-size: 15px; font-weight: 600;
+    border: none; border-radius: var(--radius-sm); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity .2s, transform .15s, box-shadow .2s;
+    box-shadow: 0 4px 24px rgba(0,229,160,0.2);
+  }
+  .btn-next:hover, .btn-submit-final:hover { opacity: 0.87; transform: translateY(-1px); box-shadow: 0 6px 32px rgba(0,229,160,0.3); }
+  .btn-next:disabled, .btn-submit-final:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .alert-box {
+    padding: 13px 16px; border-radius: var(--radius-sm);
+    font-size: 14px; margin-bottom: 20px; display: none;
+  }
+  .alert-box.show { display: flex; align-items: center; gap: 10px; }
+  .alert-error { background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.25); color: #ff8888; }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(6,9,15,0.3); border-top-color: #06090f; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* Success */
+  .success-screen { display: none; text-align: center; padding: 40px 0; }
+  .success-screen.show { display: block; animation: slideUp .5s ease; }
+  .success-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(0,229,160,0.1); border: 2px solid rgba(0,229,160,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; margin: 0 auto 24px;
+  }
+  .success-screen h2 { font-family: var(--ff); font-size: 32px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 12px; }
+  .success-screen p { font-size: 15px; color: var(--text2); line-height: 1.7; max-width: 340px; margin: 0 auto 32px; }
+  .btn-go {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 32px; background: var(--accent); color: #06090f;
+    font-family: var(--fb); font-size: 15px; font-weight: 600;
+    border: none; border-radius: var(--radius-sm); cursor: pointer;
+    text-decoration: none; transition: opacity .2s;
+    box-shadow: 0 4px 28px rgba(0,229,160,0.25);
+  }
+  .btn-go:hover { opacity: 0.87; }
+
+  /* Responsive */
+  @media (max-width: 960px) {
+    .page-wrap { grid-template-columns: 1fr; }
+    .left-col { display: none; }
+    .right-col { padding: 40px 28px 72px; align-items: stretch; }
+    .form-shell { max-width: 100%; }
+    .topbar { padding: 14px 24px; }
+  }
+  @media (max-width: 480px) {
+    .form-row-2 { grid-template-columns: 1fr; }
+    .plan-grid { grid-template-columns: 1fr; }
+    .right-col { padding: 32px 16px 72px; }
+    .form-title { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <a href="index.html" class="logo">
+    <div class="logo-icon">🚲</div>
+    Kuet<span>Track</span>
+  </a>
+  <div class="topbar-right">
+    Already a rider? &nbsp;<a href="login_rfid.html">Sign in →</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- LEFT -->
+  <div class="left-col">
+    <div class="bg-grid"></div>
+    <div class="left-inner">
+      <div class="join-badge">
+        <div class="join-dot"></div>
+        Join 2,400+ riders in Khulna
+      </div>
+      <h1>Start Your<br/><span class="blue">Smart</span><br/>Journey.</h1>
+      <p>Create your free KuetTrack account in minutes. Get your RFID card and start exploring the city on two wheels.</p>
+
+      <div class="journey">
+        <div class="journey-step">
+          <div class="j-num">01</div>
+          <div class="j-body">
+            <h4>Create Your Account</h4>
+            <p>Fill in your details and choose a plan that fits your riding style.</p>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="j-num">02</div>
+          <div class="j-body">
+            <h4>Collect Your RFID Card</h4>
+            <p>Pick it up for free at any docking station or kiosk near you.</p>
+          </div>
+        </div>
+        <div class="journey-step">
+          <div class="j-num">03</div>
+          <div class="j-body">
+            <h4>Tap & Ride Instantly</h4>
+            <p>Tap your card on any dock — the bike unlocks in under a second.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="plan-mini">
+        <div class="plan-mini-label">Plans starting from</div>
+        <div class="plan-mini-row">
+          <div class="pmini"><span class="pmini-price">৳0</span><span class="pmini-name">Basic</span></div>
+          <div class="pmini"><span class="pmini-price">৳299</span><span class="pmini-name">Monthly</span></div>
+          <div class="pmini"><span class="pmini-price">৳149</span><span class="pmini-name">Student</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="left-footer">© 2026 Kuet · IoT Bike Rental & GPS Tracking System</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+    <div class="form-shell">
+
+      <div class="form-eyebrow">New Account</div>
+      <h1 class="form-title">Create Account</h1>
+      <p class="form-sub">Already have one? <a href="login_rfid.html">Sign in →</a></p>
+
+      <!-- Progress -->
+      <div class="progress-header" id="progressHeader">
+        <div class="prog-track">
+          <div class="prog-step-wrap active" id="pw1">
+            <div class="prog-bubble">1</div>
+            <div class="prog-line" id="pl1"></div>
+          </div>
+          <div class="prog-step-wrap" id="pw2">
+            <div class="prog-bubble">2</div>
+            <div class="prog-line" id="pl2"></div>
+          </div>
+          <div class="prog-step-wrap" id="pw3">
+            <div class="prog-bubble">3</div>
+          </div>
+        </div>
+        <div class="prog-labels">
+          <div class="prog-label-item active" id="pl-lbl1">Personal Info</div>
+          <div class="prog-label-item" id="pl-lbl2">Security</div>
+          <div class="prog-label-item" id="pl-lbl3">Plan</div>
+        </div>
+      </div>
+
+      <div class="alert-box alert-error" id="alertError">
+        <span>⚠️</span><span id="alertMsg"></span>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="form-section active" id="sec1">
+        <div class="section-heading">Personal Information</div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <div class="input-wrap">
+              <span class="inp-icon">👤</span>
+              <input class="form-input" type="text" id="firstName" placeholder="Rafiq" autocomplete="given-name"/>
+            </div>
+            <div class="err-msg" id="firstNameErr">First name is required.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <div class="input-wrap">
+              <span class="inp-icon">👤</span>
+              <input class="form-input" type="text" id="lastName" placeholder="Islam" autocomplete="family-name"/>
+            </div>
+            <div class="err-msg" id="lastNameErr">Last name is required.</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-wrap">
+            <span class="inp-icon">✉️</span>
+            <input class="form-input" type="email" id="email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="err-msg" id="emailErr">Please enter a valid email address.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <div class="input-wrap">
+            <span class="inp-icon">📱</span>
+            <input class="form-input" type="tel" id="phone" placeholder="+880 1XXX XXXXXX" autocomplete="tel"/>
+          </div>
+          <div class="err-msg" id="phoneErr">Please enter your phone number.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">City / Area</label>
+          <div class="input-wrap">
+            <span class="inp-icon">📍</span>
+            <select class="form-select" id="city">
+              <option value="">Select your area</option>
+              <option value="khulna_sadar">Khulna Sadar</option>
+              <option value="khalishpur">Khalishpur</option>
+              <option value="sonadanga">Sonadanga</option>
+              <option value="boyra">Boyra</option>
+              <option value="daulatpur">Daulatpur</option>
+              <option value="rupsha">Rupsha</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="err-msg" id="cityErr">Please select your area.</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-next" type="button" id="next1">Continue to Security →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="form-section" id="sec2">
+        <div class="section-heading">Set Your Password</div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <span class="inp-icon">🔒</span>
+            <input class="form-input" type="password" id="password" placeholder="At least 6 characters" autocomplete="new-password"/>
+            <button type="button" class="eye-btn" id="eye1">👁️</button>
+          </div>
+          <div class="strength-wrap">
+            <div class="strength-segs">
+              <div class="seg" id="s1"></div>
+              <div class="seg" id="s2"></div>
+              <div class="seg" id="s3"></div>
+              <div class="seg" id="s4"></div>
+            </div>
+            <div class="strength-text" id="strText">Enter a password to see strength</div>
+          </div>
+          <div class="err-msg" id="passErr">Password must be at least 6 characters.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="input-wrap">
+            <span class="inp-icon">🔒</span>
+            <input class="form-input" type="password" id="confirmPass" placeholder="Repeat your password" autocomplete="new-password"/>
+            <button type="button" class="eye-btn" id="eye2">👁️</button>
+          </div>
+          <div class="err-msg" id="confErr">Passwords do not match.</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-back" type="button" id="back2">← Back</button>
+          <button class="btn-next" type="button" id="next2">Continue to Plan →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="form-section" id="sec3">
+        <div class="section-heading">Choose Your Plan</div>
+        <div class="plan-grid">
+          <label class="plan-opt sel" id="optBasic">
+            <input type="radio" name="plan" value="basic" checked/>
+            <span class="p-price">৳0</span>
+            <span class="p-name">Basic</span>
+            <span class="p-note">Pay per ride</span>
+          </label>
+          <label class="plan-opt" id="optMonthly">
+            <div class="plan-hot">POPULAR</div>
+            <input type="radio" name="plan" value="monthly"/>
+            <span class="p-price">৳299</span>
+            <span class="p-name">Monthly</span>
+            <span class="p-note">Unlimited 60 min</span>
+          </label>
+          <label class="plan-opt" id="optStudent">
+            <input type="radio" name="plan" value="student"/>
+            <span class="p-price">৳149</span>
+            <span class="p-name">Student</span>
+            <span class="p-note">Unlimited 45 min</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">NID / Student ID &nbsp;<span class="label-opt">(optional — required for Student plan)</span></label>
+          <div class="input-wrap">
+            <span class="inp-icon">🪪</span>
+            <input class="form-input" type="text" id="idNumber" placeholder="National ID or University Student ID"/>
+          </div>
+        </div>
+
+        <label class="terms-row" id="termsRow">
+          <input type="checkbox" id="termsCheck"/>
+          <span>I agree to KuetTrack's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
+        </label>
+        <div class="err-msg" id="termsErr">You must accept the terms to continue.</div>
+
+        <div class="btn-row" style="margin-top:20px;">
+          <button class="btn-back" type="button" id="back3">← Back</button>
+          <button class="btn-submit-final" type="button" id="submitBtn">
+            <span id="btnText">Create My Account 🚲</span>
+            <div class="spinner" id="spinner"></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon">🎉</div>
+        <h2>You're In,<br/>Rider!</h2>
+        <p>Your KuetTrack account is ready. Head to the nearest kiosk to collect your RFID card and start riding.</p>
+        <a href="login_rfid.html" class="btn-go">Go to Login →</a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentStep = 1;
+
+  function goStep(n) {
+    document.getElementById(`sec${currentStep}`).classList.remove('active');
+    currentStep = n;
+    document.getElementById(`sec${n}`).classList.add('active');
+    updateProgress(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateProgress(n) {
+    [1,2,3].forEach(i => {
+      const pw = document.getElementById(`pw${i}`);
+      const lbl = document.getElementById(`pl-lbl${i}`);
+      pw.classList.remove('active','done');
+      lbl.classList.remove('active','done');
+      if (i < n) { pw.classList.add('done'); lbl.classList.add('done'); pw.querySelector('.prog-bubble').textContent = '✓'; }
+      else if (i === n) { pw.classList.add('active'); lbl.classList.add('active'); pw.querySelector('.prog-bubble').textContent = i; }
+      else { pw.querySelector('.prog-bubble').textContent = i; }
+    });
+    // Lines
+    if (document.getElementById('pl1')) document.getElementById('pl1').classList.toggle('done', n > 1);
+    if (document.getElementById('pl2')) document.getElementById('pl2').classList.toggle('done', n > 2);
+  }
+
+  function setErr(inputId, errId, cond) {
+    const el = document.getElementById(inputId);
+    if (el) el.classList.toggle('error-state', cond);
+    document.getElementById(errId).classList.toggle('show', cond);
+    return cond;
+  }
+  function clearErrs(...errIds) { errIds.forEach(id => document.getElementById(id).classList.remove('show')); }
+
+  // STEP 1
+  document.getElementById('next1').addEventListener('click', () => {
+    clearErrs('firstNameErr','lastNameErr','emailErr','phoneErr','cityErr');
+    let bad = false;
+    bad |= setErr('firstName','firstNameErr', !document.getElementById('firstName').value.trim());
+    bad |= setErr('lastName','lastNameErr', !document.getElementById('lastName').value.trim());
+    bad |= setErr('email','emailErr', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('email').value.trim()));
+    bad |= setErr('phone','phoneErr', !document.getElementById('phone').value.trim());
+    bad |= setErr('city','cityErr', !document.getElementById('city').value);
+    if (!bad) goStep(2);
+  });
+
+  // Password strength
+  document.getElementById('password').addEventListener('input', function() {
+    const v = this.value;
+    let score = 0;
+    if (v.length >= 6) score++;
+    if (v.length >= 10) score++;
+    if (/[A-Z]/.test(v) && /[0-9]/.test(v)) score++;
+    if (/[^a-zA-Z0-9]/.test(v)) score++;
+    const cls = ['','weak','fair','good','strong'];
+    const lbl = ['Enter a password to see strength','Weak — try a longer password','Fair — add numbers or symbols','Good — almost there!','Strong password ✓'];
+    [1,2,3,4].forEach(i => {
+      const seg = document.getElementById(`s${i}`);
+      seg.className = 'seg' + (i <= score ? ` ${cls[score]}` : '');
+    });
+    document.getElementById('strText').textContent = v ? lbl[score] : lbl[0];
+  });
+
+  // Eye toggles
+  function setupEye(btnId, inputId) {
+    document.getElementById(btnId).addEventListener('click', function() {
+      const inp = document.getElementById(inputId);
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      this.textContent = show ? '🙈' : '👁️';
+    });
+  }
+  setupEye('eye1','password');
+  setupEye('eye2','confirmPass');
+
+  // STEP 2
+  document.getElementById('back2').addEventListener('click', () => goStep(1));
+  document.getElementById('next2').addEventListener('click', () => {
+    clearErrs('passErr','confErr');
+    const p = document.getElementById('password').value;
+    const c = document.getElementById('confirmPass').value;
+    let bad = false;
+    bad |= setErr('password','passErr', p.length < 6);
+    bad |= setErr('confirmPass','confErr', p !== c || !c);
+    if (!bad) goStep(3);
+  });
+
+  // Plan selection
+  document.querySelectorAll('.plan-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.plan-opt').forEach(o => o.classList.remove('sel'));
+      opt.classList.add('sel');
+    });
+  });
+
+  // STEP 3
+  document.getElementById('back3').addEventListener('click', () => goStep(2));
+
+  document.getElementById('submitBtn').addEventListener('click', async () => {
+    const terms = document.getElementById('termsCheck').checked;
+    setErr(null,'termsErr', !terms);
+    if (!terms) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    document.getElementById('btnText').style.display = 'none';
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('alertError').classList.remove('show');
+
+    const payload = {
+      firstName: document.getElementById('firstName').value.trim(),
+      lastName: document.getElementById('lastName').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      city: document.getElementById('city').value,
+      password: document.getElementById('password').value,
+      plan: document.querySelector('input[name="plan"]:checked').value,
+      idNumber: document.getElementById('idNumber').value.trim()
+    };
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('progressHeader').style.display = 'none';
+        document.getElementById('sec3').classList.remove('active');
+        document.getElementById('successScreen').classList.add('show');
+      } else {
+        document.getElementById('alertMsg').textContent = data.message || 'Registration failed. Please try again.';
+        document.getElementById('alertError').classList.add('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch {
+      document.getElementById('alertMsg').textContent = 'Cannot connect to server. Make sure the backend is running.';
+      document.getElementById('alertError').classList.add('show');
+    } finally {
+      btn.disabled = false;
+      document.getElementById('btnText').style.display = 'inline';
+      document.getElementById('spinner').style.display = 'none';
+    }
+  });
+</script>
+</body>
+</html>

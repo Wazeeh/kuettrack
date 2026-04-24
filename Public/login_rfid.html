@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - KuetTrack</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-color: #2ecc71;
+      --secondary-color: #3498db;
+      --dark-bg: #1a1a2e;
+      --light-bg: #f8f9fa;
+      --text-dark: #2c3e50;
+      --text-light: #ecf0f1;
+      --danger: #e74c3c;
+      --success: #27ae60;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--dark-bg) 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 900px;
+      overflow: hidden;
+      width: 95%;
+    }
+
+    .login-left {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      padding: 3rem 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .login-left h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .login-left p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      opacity: 0.95;
+    }
+
+    .login-right {
+      padding: 3rem 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ecf0f1;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 5px rgba(46, 204, 113, 0.2);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #ecf0f1;
+    }
+
+    .tab-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: none;
+      color: #7f8c8d;
+      cursor: pointer;
+      font-weight: 600;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-login:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      background: #fadbd8;
+      color: var(--danger);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .success-message {
+      background: #d4edda;
+      color: var(--success);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .info-message {
+      background: #d1ecf1;
+      color: #0c5460;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .rfid-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: #f0f0f0;
+      border-radius: 0.5rem;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #95a5a6;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.online {
+      background: var(--success);
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 1.5rem 0;
+      color: #95a5a6;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #ecf0f1;
+    }
+
+    .divider::before {
+      margin-right: 0.5rem;
+    }
+
+    .divider::after {
+      margin-left: 0.5rem;
+    }
+
+    .signup-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #7f8c8d;
+    }
+
+    .signup-link a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    .rfid-scanning {
+      text-align: center;
+      padding: 2rem;
+      background: #ecf0f1;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .rfid-scanning-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      animation: scanPulse 1.5s infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes scanPulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+      }
+    }
+
+    .remember-forgot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .remember-forgot a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    .remember-forgot a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .login-container {
+        grid-template-columns: 1fr;
+      }
+
+      .login-left {
+        display: none;
+      }
+
+      .login-right {
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <!-- Left Side -->
+    <div class="login-left">
+      <h2>🚴 KuetTrack</h2>
+      <p>Welcome to the future of bike rentals. Fast, secure, and always ready wherever you are. Tap your RFID card or log in with your credentials.</p>
+      <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">Pro tip: Stations have dedicated RFID readers for instant authentication.</p>
+    </div>
+
+    <!-- Right Side -->
+    <div class="login-right">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn" onclick="switchTab('email', event)">📧 Email</button>
+        <button class="tab-btn active" onclick="switchTab('rfid', event)">💳 RFID Card</button>
+      </div>
+
+      <!-- EMAIL LOGIN TAB -->
+      <div id="email-tab" class="tab-content">
+        <form id="loginForm">
+          <div class="error-message" id="errorMessage"></div>
+          <div class="success-message" id="successMessage"></div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          </div>
+
+          <div class="remember-forgot">
+            <label>
+              <input type="checkbox" name="remember"> Remember me
+            </label>
+            <a href="#">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn-login" id="loginBtn">Login</button>
+        </form>
+
+        <div class="signup-link">
+          Don't have an account? <a href="register.html">Sign up now</a>
+        </div>
+      </div>
+
+      <!-- RFID LOGIN TAB -->
+      <div id="rfid-tab" class="tab-content active">
+        <div class="info-message" id="rfidInfo" style="display: block;">
+          💳 <strong>RFID Authentication</strong> - Your RFID card UID will be automatically detected and you'll be logged in instantly.
+        </div>
+
+        <div class="rfid-status">
+          <span class="status-indicator online" id="rfidIndicator"></span>
+          <span id="rfidStatusText">🟢 RFID System Ready</span>
+        </div>
+
+        <div class="form-group">
+          <label for="rfidUid">Enter or Scan RFID Card UID</label>
+          <input 
+            type="text" 
+            id="rfidUid" 
+            placeholder="Tap card or enter UID (e.g. A3:4F:2B:11)" 
+            autofocus
+          >
+        </div>
+
+        <div class="rfid-scanning" id="rfidScanning" style="display: none;">
+          <span class="rfid-scanning-dot"></span> Scanning...
+        </div>
+
+        <div class="error-message" id="rfidErrorMessage"></div>
+        <div class="success-message" id="rfidSuccessMessage"></div>
+
+        <button type="button" class="btn-login" id="rfidAuthBtn" onclick="authenticateWithRfid()">🔓 Authenticate with RFID</button>
+
+        <div style="text-align: center; font-size: 0.85rem; color: #7f8c8d; margin-top: 1.5rem;">
+          <p>💡 <strong>How it works:</strong></p>
+          <p>1. Place your RFID card on the reader at any KuetTrack station</p>
+          <p>2. Your UID appears here automatically</p>
+          <p>3. You're logged in instantly!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000';
+
+    // Tab switching
+    function switchTab(tab, event) {
+      event.preventDefault();
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(tab + '-tab').classList.add('active');
+      event.target.classList.add('active');
+
+      if (tab === 'rfid') {
+        document.getElementById('rfidUid').focus();
+      }
+    }
+
+    // EMAIL LOGIN
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const errorDiv = document.getElementById('errorMessage');
+      const successDiv = document.getElementById('successMessage');
+
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      if (!email || !password) {
+        errorDiv.textContent = '❌ Please fill in all fields.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = '⏳ Logging in...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('kuettrack_token', data.token);
+          localStorage.setItem('kuettrack_user', JSON.stringify(data.user));
+
+          successDiv.textContent = '✅ Login successful! Redirecting...';
+          successDiv.style.display = 'block';
+
+          setTimeout(() => {
+            window.location.href = data.user.role === 'admin' ? 'admin-dashboard.html' : 'dashboard.html';
+          }, 1500);
+        } else {
+          errorDiv.textContent = `❌ ${data.message || 'Login failed. Please try again.'}`;
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = '❌ Network error. Is the backend running?';
+        errorDiv.style.display = 'block';
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+      }
+    });
+
+    // RFID AUTO-LOGIN
+    async function authenticateWithRfid() {
+      const rfidUid = document.getElementById('rfidUid').value.trim().toUpperCase();
+      const authBtn = document.getElementById('rfidAuthBtn');
+      const errorDiv = document.getElementById('rfidErrorMessage');
+      const successDiv = document.getElementById('rfidSuccessMessage');
+      const scanning = document.getElementById('rfidScanning');
+
+      console.log('🔐 Authenticating RFID:', rfidUid);
+
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      if (!rfidUid) {
+        errorDiv.textContent = '❌ Please enter or tap an RFID card UID.';
+        errorDiv.style.display = 'block';
+        console.log('❌ No UID provided');
+        return;
+      }
+
+      authBtn.disabled = true;
+      scanning.style.display = 'block';
+
+      try {
+        const url = `${API_BASE}/api/auth/user-by-rfid/${rfidUid}`;
+        console.log('🔗 Fetching:', url);
+        
+        const response = await fetch(url);
+        console.log('📊 Response status:', response.status);
+        
+        const data = await response.json();
+        console.log('📄 Response data:', data);
+
+        if (response.ok && data.authorized) {
+          console.log('✅ RFID Authorized!');
+          
+          // Store JWT token using correct keys that dashboard expects
+          localStorage.setItem('kuettrack_token', data.token);
+          localStorage.setItem('kuettrack_user', JSON.stringify(data.user));
+
+          successDiv.innerHTML = `✅ <strong>Welcome ${data.user.firstName}!</strong> Authenticated via RFID. Redirecting to dashboard...`;
+          successDiv.style.display = 'block';
+
+          console.log('🚀 Redirecting to dashboard...');
+          console.log('📦 Stored token and user data');
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1500);
+        } else {
+          console.log('❌ RFID Not Authorized:', data);
+          errorDiv.innerHTML = `❌ <strong>RFID Not Recognized</strong><br/>${data.message || 'This RFID card is not registered.'}`;
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('RFID Auth Error:', error);
+        errorDiv.textContent = '❌ Error communicating with backend. Please check your connection.';
+        errorDiv.style.display = 'block';
+      } finally {
+        authBtn.disabled = false;
+        scanning.style.display = 'none';
+      }
+    }
+
+    // Auto-submit when RFID UID is entered (for quick scanning)
+    document.getElementById('rfidUid').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        authenticateWithRfid();
+      }
+    });
+
+    // Check RFID system + ESP32 #1 WiFi status
+    async function checkRfidStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/api/system/health`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'online') {
+            // Check if ESP32 #2 GPS is sending (proxy for ESP32 WiFi being active)
+            try {
+              const gpsRes = await fetch(`${API_BASE}/api/gps/status`);
+              if (gpsRes.ok) {
+                const gps = await gpsRes.json();
+                const gpsPart = gps.online
+                  ? ' &nbsp;·&nbsp; 📡 GPS Online'
+                  : ' &nbsp;·&nbsp; ⚠️ GPS Offline';
+                document.getElementById('rfidStatusText').innerHTML = '🟢 RFID System Ready' + gpsPart;
+              } else {
+                document.getElementById('rfidStatusText').innerHTML = '🟢 RFID System Ready';
+              }
+            } catch {
+              document.getElementById('rfidStatusText').innerHTML = '🟢 RFID System Ready';
+            }
+            document.getElementById('rfidIndicator').classList.add('online');
+          } else {
+            document.getElementById('rfidStatusText').innerHTML = '🔴 RFID System Offline';
+            document.getElementById('rfidIndicator').classList.remove('online');
+          }
+        } else {
+          document.getElementById('rfidStatusText').innerHTML = '🔴 Backend Unreachable';
+          document.getElementById('rfidIndicator').classList.remove('online');
+        }
+      } catch (error) {
+        document.getElementById('rfidStatusText').innerHTML = '🔴 Server not reachable — is backend running?';
+        document.getElementById('rfidIndicator').classList.remove('online');
+      }
+    }
+
+    // Poll for real-time RFID card updates from ESP32 #1 (WiFi)
+    // ESP32 #1 POSTs to /api/rfid/scan → server stores result → we poll /api/rfid/latest
+    let lastRfidUid = '';
+    let lastRfidTs = 0;
+    async function pollForRfidUpdates() {
+      try {
+        const response = await fetch(`${API_BASE}/api/rfid/latest`);
+        if (response.status === 204) return; // nothing new
+
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.uid || data.timestamp === lastRfidTs) return;
+          lastRfidTs = data.timestamp;
+
+          console.log('📡 ESP32 RFID scan received:', data);
+
+          // Only login if server explicitly confirmed authorized = true with a token
+          if (data.authorized === true && data.token && data.user) {
+            document.getElementById('rfidUid').value = data.uid;
+            document.getElementById('rfidScanning').style.display = 'block';
+
+            localStorage.setItem('kuettrack_token', data.token);
+            localStorage.setItem('kuettrack_user', JSON.stringify(data.user));
+
+            const successDiv = document.getElementById('rfidSuccessMessage');
+            successDiv.innerHTML = `✅ <strong>Welcome ${data.user.firstName}!</strong> Authenticated via RFID. Redirecting...`;
+            successDiv.style.display = 'block';
+            document.getElementById('rfidErrorMessage').style.display = 'none';
+
+            console.log('🚀 ESP32 WiFi auth successful — redirecting...');
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+            return;
+          }
+
+          // Card scanned but not authorized — show error only if scan is fresh (within 5 seconds)
+          const isRecent = data.timestamp && (Date.now() - data.timestamp) < 5000;
+          if (data.uid && data.authorized !== true && isRecent) {
+            const errorDiv = document.getElementById('rfidErrorMessage');
+            errorDiv.innerHTML = `❌ <strong>Access Denied</strong> — Card <code>${data.uid}</code> is not registered.`;
+            errorDiv.style.display = 'block';
+            document.getElementById('rfidSuccessMessage').style.display = 'none';
+            document.getElementById('rfidUid').value = data.uid;
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('RFID poll error:', error);
+      }
+    }
+
+    // Initialize
+    console.log('🚀 Login page initialized');
+    console.log('📡 API Base:', API_BASE);
+    
+    checkRfidStatus();
+    console.log('✅ Initial RFID status check started');
+    
+    // Start polling for RFID immediately - every 500ms
+    const rfidPollInterval = setInterval(pollForRfidUpdates, 500);
+    console.log('📡 RFID polling started (every 500ms)');
+    
+    // Check status every 10 seconds
+    const statusCheckInterval = setInterval(checkRfidStatus, 10000);
+    console.log('🔍 Status check interval started (every 10s)');
+  </script>
+</body>
+</html>

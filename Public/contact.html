@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Contact Us — KuetTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06090f;--bg2:#0c1018;--surface:#161c28;--surface2:#1d2535;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#00e5a0;--accent2:#0088ff;--accent3:#7c5cfc;
+  --text:#f0f4ff;--text2:#8b95b0;--text3:#5a6175;
+  --ff:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+  --radius:16px;--radius-sm:10px;--error:#ff5050;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.6;overflow-x:hidden;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 60px;background:rgba(6,9,15,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{font-family:var(--ff);font-size:22px;font-weight:800;letter-spacing:-0.5px;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo span{color:var(--accent);}
+.nav-links{display:flex;gap:36px;list-style:none;}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:14px;transition:color 0.2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--text);}
+.nav-cta{display:flex;gap:12px;}
+.btn-outline{padding:9px 22px;border-radius:8px;border:1px solid var(--border2);color:var(--text);background:transparent;font-family:var(--fb);font-size:14px;text-decoration:none;transition:background 0.2s;}
+.btn-outline:hover{background:var(--surface);}
+.btn-primary{padding:9px 22px;border-radius:8px;border:none;background:var(--accent);color:#06090f;font-family:var(--fb);font-size:14px;font-weight:600;text-decoration:none;transition:opacity 0.2s;}
+.btn-primary:hover{opacity:0.88;}
+
+/* HERO */
+.page-hero{padding:160px 60px 80px;text-align:center;position:relative;overflow:hidden;}
+.page-hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(0,229,160,0.07),transparent 70%);pointer-events:none;}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,160,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.03) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,black,transparent);pointer-events:none;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:5px 14px 5px 8px;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:100px;font-size:12px;color:var(--accent);margin-bottom:24px;}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.4);}}
+.page-hero h1{font-family:var(--ff);font-size:clamp(44px,6vw,68px);font-weight:800;letter-spacing:-3px;margin-bottom:20px;}
+.page-hero h1 .green{color:var(--accent);}
+.page-hero p{font-size:18px;color:var(--text2);max-width:520px;margin:0 auto;line-height:1.75;font-weight:300;}
+
+/* CONTACT LAYOUT */
+.contact-section{padding:80px 60px;background:var(--bg2);}
+.contact-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:80px;align-items:start;max-width:1100px;}
+
+/* INFO CARDS */
+.info-cards{display:flex;flex-direction:column;gap:16px;margin-bottom:40px;}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 20px;display:flex;gap:16px;align-items:flex-start;transition:border-color 0.2s;}
+.info-card:hover{border-color:var(--border2);}
+.ic-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ic-green{background:rgba(0,229,160,0.1);}
+.ic-blue{background:rgba(0,136,255,0.1);}
+.ic-purple{background:rgba(124,92,252,0.1);}
+.ic-amber{background:rgba(255,171,0,0.1);}
+.ic-label{font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;}
+.ic-value{font-size:15px;font-weight:500;}
+.ic-value a{color:var(--accent);text-decoration:none;}
+.ic-value a:hover{text-decoration:underline;}
+
+/* HOURS */
+.hours-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px;}
+.hours-title{font-family:var(--ff);font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;}
+.hours-row{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--border);}
+.hours-row:last-child{border-bottom:none;}
+.hours-day{color:var(--text2);}
+.hours-time{color:var(--accent);font-weight:500;}
+
+/* FORM */
+.contact-form-wrap{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:40px;}
+.form-title{font-family:var(--ff);font-size:26px;font-weight:800;letter-spacing:-1px;margin-bottom:6px;}
+.form-sub{font-size:14px;color:var(--text2);margin-bottom:28px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{margin-bottom:18px;}
+.form-label{font-size:13px;color:var(--text2);margin-bottom:8px;display:block;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:12px 16px;color:var(--text);font-family:var(--fb);font-size:14px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,0.1);}
+.form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6175' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.form-select option{background:var(--surface);}
+.form-textarea{resize:vertical;min-height:130px;line-height:1.6;}
+.submit-btn{width:100%;padding:14px;border-radius:var(--radius-sm);background:var(--accent);color:#06090f;font-family:var(--ff);font-size:16px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity 0.2s;}
+.submit-btn:hover{opacity:0.88;}
+.spinner{width:18px;height:18px;border:2px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.success-msg{display:none;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:var(--radius-sm);padding:16px;color:var(--accent);font-size:15px;text-align:center;margin-top:16px;}
+.success-msg.show{display:block;}
+
+/* FAQ */
+.faq-section{padding:80px 60px;background:var(--bg);}
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:48px;max-width:1000px;}
+.faq-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:24px;}
+.faq-q{font-family:var(--ff);font-size:15px;font-weight:700;margin-bottom:10px;}
+.faq-a{font-size:14px;color:var(--text2);line-height:1.7;}
+
+/* FOOTER */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:60px 60px 36px;}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:60px;margin-bottom:60px;}
+.footer-brand p{font-size:14px;color:var(--text3);line-height:1.7;margin-top:14px;max-width:280px;}
+.footer-col h5{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:20px;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:12px;}
+.footer-col a{color:var(--text2);text-decoration:none;font-size:14px;transition:color 0.2s;}
+.footer-col a:hover{color:var(--text);}
+.footer-bottom{border-top:1px solid var(--border);padding-top:28px;display:flex;justify-content:space-between;align-items:center;}
+.footer-bottom p{font-size:13px;color:var(--text3);}
+.footer-bottom-links{display:flex;gap:24px;}
+.footer-bottom-links a{font-size:13px;color:var(--text3);text-decoration:none;}
+
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
+@media(max-width:768px){nav{padding:14px 20px;}.nav-links{display:none;}.page-hero{padding:120px 24px 60px;}section,.contact-section,.faq-section{padding:60px 24px;}.contact-grid,.faq-grid,.form-row{grid-template-columns:1fr;}.footer-top{grid-template-columns:1fr;gap:32px;}footer{padding:40px 24px 24px;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo"><div class="logo-icon">🚲</div>Kuet<span>Track</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html#how">How It Works</a></li>
+    <li><a href="index.html#features">Features</a></li>
+    <li><a href="index.html#pricing">Pricing</a></li>
+    <li><a href="contact.html" class="active" style="color:var(--text);">Contact</a></li>
+    <li><a href="admin-login.html" style="color:var(--accent3);">🛡️ Admin</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="login_rfid.html" class="btn-outline">Login</a>
+    <a href="register.html" class="btn-primary">Get Started</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div class="eyebrow"><div class="eyebrow-dot"></div>We're Here to Help</div>
+  <h1>Get in <span class="green">Touch</span></h1>
+  <p>Lost a bike? Have a billing issue? Want to partner with us? Reach out — our team in Khulna responds within a few hours.</p>
+</div>
+
+<div class="contact-section">
+  <div class="contact-grid fade-in">
+    <!-- LEFT: Info -->
+    <div>
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="ic-icon ic-green">📧</div>
+          <div>
+            <div class="ic-label">Email Support</div>
+            <div class="ic-value"><a href="mailto:support@kuettrack.com">support@kuettrack.com</a></div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="ic-icon ic-blue">📞</div>
+          <div>
+            <div class="ic-label">Phone / WhatsApp</div>
+            <div class="ic-value"><a href="tel:+8801234567890" style="color:var(--text2);">+880 1234 567890</a></div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="ic-icon ic-purple">📍</div>
+          <div>
+            <div class="ic-label">Head Office</div>
+            <div class="ic-value" style="color:var(--text2);">KuetTrack Lab, ECE Building<br/>KUET Campus, Khulna-9203<br/>Bangladesh</div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="ic-icon ic-amber">🚲</div>
+          <div>
+            <div class="ic-label">Bike / Station Issues</div>
+            <div class="ic-value"><a href="mailto:ops@kuettrack.com">ops@kuettrack.com</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hours-box">
+        <div class="hours-title">Support Hours</div>
+        <div class="hours-row"><span class="hours-day">Saturday – Thursday</span><span class="hours-time">8:00 AM – 10:00 PM</span></div>
+        <div class="hours-row"><span class="hours-day">Friday</span><span class="hours-time">2:00 PM – 8:00 PM</span></div>
+        <div class="hours-row"><span class="hours-day">Emergency Hotline</span><span class="hours-time">24 / 7</span></div>
+        <div class="hours-row"><span class="hours-day">Response Time (Email)</span><span class="hours-time">Under 4 hours</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Form -->
+    <div class="contact-form-wrap">
+      <div class="form-title">Send Us a Message</div>
+      <div class="form-sub">Fill out the form and we'll get back to you as soon as possible.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name *</label>
+          <input class="form-input" id="fname" type="text" placeholder="Rafiq"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name *</label>
+          <input class="form-input" id="lname" type="text" placeholder="Islam"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input class="form-input" id="email" type="email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" id="phone" type="tel" placeholder="+880 17XX XXX XXX"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Topic *</label>
+        <select class="form-select" id="topic">
+          <option value="">Select a topic…</option>
+          <option>Bike / Lock Issue</option>
+          <option>Billing / Wallet Problem</option>
+          <option>RFID Card Help</option>
+          <option>Account Issue</option>
+          <option>Station Not Working</option>
+          <option>Partnership / Media Inquiry</option>
+          <option>Report Abandoned Bike</option>
+          <option>General Inquiry</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message *</label>
+        <textarea class="form-textarea" id="message" placeholder="Describe your issue or question in detail. Include bike ID or station name if relevant."></textarea>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="sendMessage()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">📨 &nbsp;Send Message</span>
+      </button>
+      <div class="success-msg" id="successMsg">✅ &nbsp;Your message has been sent! We'll reply within 4 hours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="fade-in">
+    <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:12px;">Quick Answers</div>
+    <h2 style="font-family:var(--ff);font-size:clamp(28px,3vw,40px);font-weight:800;letter-spacing:-1.5px;margin-bottom:16px;">Frequently Asked Questions</h2>
+    <p style="font-size:16px;color:var(--text2);max-width:540px;">Can't find what you're looking for? <a href="support.html" style="color:var(--accent);">Visit the full support centre →</a></p>
+  </div>
+  <div class="faq-grid fade-in">
+    <div class="faq-item">
+      <div class="faq-q">My RFID card isn't unlocking the bike. What do I do?</div>
+      <p class="faq-a">First, check that your wallet balance is above ৳10. If it is, try tapping more firmly and holding for 2 seconds. If it still fails, email ops@kuettrack.com with your card number and bike ID.</p>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">I was charged but the bike didn't unlock. How do I get a refund?</div>
+      <p class="faq-a">This is rare but happens during connectivity issues. Email support@kuettrack.com with your ride attempt time. Refunds are processed within 24 hours.</p>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How do I top up my wallet?</div>
+      <p class="faq-a">Log into your dashboard and click "Add Balance". We accept bKash, Nagad, Rocket, and debit cards. The balance reflects instantly after payment confirmation.</p>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">I found a damaged or abandoned bike. What should I do?</div>
+      <p class="faq-a">Thank you for reporting! Please note the bike's ID number (printed on the frame) and its location, then email ops@kuettrack.com. Our team will respond within 2 hours.</p>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How do I cancel or change my monthly plan?</div>
+      <p class="faq-a">You can cancel your plan anytime from your Account Settings. Your access continues until the end of the billing period. No cancellation fees, ever.</p>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can I get a replacement RFID card?</div>
+      <p class="faq-a">Yes. Visit any KuetTrack station during staffed hours, or mail us your student ID and account email. Replacement cards cost ৳30 and are issued within 2 working days.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand"><div class="logo"><div class="logo-icon">🚲</div>Kuet<span>Track</span></div><p>IoT-based smart bike rental and GPS tracking for Khulna.</p></div>
+    <div class="footer-col"><h5>Product</h5><ul><li><a href="index.html#features">Features</a></li><li><a href="index.html#how">How It Works</a></li><li><a href="index.html#pricing">Pricing</a></li><li><a href="admin-login.html">Admin Panel</a></li></ul></div>
+    <div class="footer-col"><h5>Company</h5><ul><li><a href="about.html">About</a></li><li><a href="blog.html">Blog</a></li><li><a href="contact.html" style="color:var(--accent);">Contact</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms</a></li></ul></div>
+    <div class="footer-col"><h5>Help</h5><ul><li><a href="support.html">Support Centre</a></li><li><a href="support.html#faq">FAQ</a></li><li><a href="mailto:support@kuettrack.com">Email Us</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 Kuet. IoT Bike Rental & Tracking System.</p>
+    <div class="footer-bottom-links"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="support.html">Support</a></div>
+  </div>
+</footer>
+
+<script>
+const observer=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');}),{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
+window.addEventListener('scroll',()=>{document.querySelector('nav').style.padding=window.scrollY>50?'12px 60px':'18px 60px';});
+
+function sendMessage(){
+  const fname=document.getElementById('fname').value.trim();
+  const email=document.getElementById('email').value.trim();
+  const topic=document.getElementById('topic').value;
+  const message=document.getElementById('message').value.trim();
+  if(!fname||!email||!topic||!message){alert('Please fill in all required fields.');return;}
+  const btn=document.getElementById('submitBtn');
+  const spinner=document.getElementById('spinner');
+  const btnText=document.getElementById('btnText');
+  btn.disabled=true;spinner.style.display='block';btnText.style.display='none';
+  setTimeout(()=>{
+    btn.disabled=false;spinner.style.display='none';btnText.style.display='flex';
+    document.getElementById('successMsg').classList.add('show');
+    document.getElementById('fname').value='';document.getElementById('lname').value='';
+    document.getElementById('email').value='';document.getElementById('phone').value='';
+    document.getElementById('topic').value='';document.getElementById('message').value='';
+  },1500);
+}
+</script>
+</body>
+</html>

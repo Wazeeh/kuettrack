@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KuetTrack — IoT Bike Rental & Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #06090f;
+    --bg2: #0c1018;
+    --bg3: #111620;
+    --surface: #161c28;
+    --surface2: #1d2535;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #00e5a0;
+    --accent2: #0088ff;
+    --accent3: #7c5cfc;
+    --text: #f0f4ff;
+    --text2: #8b95b0;
+    --text3: #5a6175;
+    --ff: 'Syne', sans-serif;
+    --fb: 'DM Sans', sans-serif;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--fb);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 60px;
+    background: rgba(6,9,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    transition: padding 0.3s;
+  }
+  .logo {
+    font-family: var(--ff);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo span { color: var(--accent); }
+  .nav-links {
+    display: flex; gap: 36px; list-style: none;
+  }
+  .nav-links a {
+    color: var(--text2); text-decoration: none; font-size: 14px;
+    font-weight: 400; letter-spacing: 0.3px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    display: flex; gap: 12px; align-items: center;
+  }
+  .btn-outline {
+    padding: 9px 22px; border-radius: 8px;
+    border: 1px solid var(--border2);
+    color: var(--text); background: transparent;
+    font-family: var(--fb); font-size: 14px; cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-outline:hover { background: var(--surface); border-color: var(--border2); }
+  .btn-primary {
+    padding: 9px 22px; border-radius: 8px;
+    border: none;
+    background: var(--accent); color: #06090f;
+    font-family: var(--fb); font-size: 14px; font-weight: 600; cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 140px 60px 80px;
+    position: relative; overflow: hidden;
+    text-align: center;
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+  }
+  .hero-glow {
+    position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+    width: 700px; height: 400px;
+    background: radial-gradient(ellipse, rgba(0,229,160,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px 6px 8px;
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 100px;
+    font-size: 13px; color: var(--accent);
+    margin-bottom: 28px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.5; transform:scale(1.4); }
+  }
+  @keyframes fadeUp {
+    from{ opacity:0; transform:translateY(16px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .hero h1 {
+    font-family: var(--ff);
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -3px;
+    max-width: 800px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .hero h1 .green { color: var(--accent); }
+  .hero h1 .blue { color: var(--accent2); }
+  .hero-sub {
+    font-size: 18px; color: var(--text2);
+    max-width: 520px; line-height: 1.7;
+    margin-bottom: 44px;
+    font-weight: 300;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+  .hero-actions {
+    display: flex; gap: 14px; align-items: center; justify-content: center;
+    margin-bottom: 72px;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+  .btn-hero {
+    padding: 14px 32px; border-radius: 10px;
+    background: var(--accent); color: #06090f;
+    font-family: var(--fb); font-size: 15px; font-weight: 600;
+    border: none; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 0 30px rgba(0,229,160,0.25);
+  }
+  .btn-hero:hover { opacity: 0.88; transform: translateY(-2px); }
+  .btn-hero-sec {
+    padding: 14px 32px; border-radius: 10px;
+    background: var(--surface); color: var(--text);
+    font-family: var(--fb); font-size: 15px;
+    border: 1px solid var(--border2); cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-hero-sec:hover { background: var(--surface2); }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex; gap: 0; justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg2);
+    overflow: hidden;
+    max-width: 700px; margin: 0 auto;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+  .stat-item {
+    flex: 1; padding: 20px 28px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-num {
+    font-family: var(--ff); font-size: 28px; font-weight: 700;
+    color: var(--accent); display: block; letter-spacing: -1px;
+  }
+  .stat-label { font-size: 13px; color: var(--text3); }
+
+  /* SECTION COMMON */
+  section { padding: 100px 60px; }
+  .section-label {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin-bottom: 12px;
+  }
+  .section-title {
+    font-family: var(--ff); font-size: clamp(32px, 4vw, 48px);
+    font-weight: 800; letter-spacing: -2px; line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .section-sub {
+    font-size: 16px; color: var(--text2); max-width: 540px; line-height: 1.7;
+  }
+  .section-header { margin-bottom: 60px; }
+
+  /* HOW IT WORKS */
+  .how { background: var(--bg2); }
+  .steps-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .step-card {
+    background: var(--bg2); padding: 36px 28px;
+    transition: background 0.25s;
+    position: relative;
+  }
+  .step-card:hover { background: var(--surface); }
+  .step-num {
+    font-family: var(--ff); font-size: 48px; font-weight: 800;
+    color: var(--border2); line-height: 1; margin-bottom: 20px;
+    letter-spacing: -2px;
+  }
+  .step-icon {
+    font-size: 28px; margin-bottom: 16px; display: block;
+  }
+  .step-title {
+    font-family: var(--ff); font-size: 18px; font-weight: 700;
+    margin-bottom: 10px; letter-spacing: -0.5px;
+  }
+  .step-desc { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+  /* FEATURES */
+  .features { background: var(--bg); }
+  .features-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  }
+  .feature-card {
+    background: var(--bg); padding: 40px 32px;
+    transition: background 0.25s;
+    position: relative; overflow: hidden;
+  }
+  .feature-card:hover { background: var(--surface); }
+  .feature-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-icon-wrap {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 20px;
+  }
+  .fi-green { background: rgba(0,229,160,0.12); }
+  .fi-blue { background: rgba(0,136,255,0.12); }
+  .fi-purple { background: rgba(124,92,252,0.12); }
+  .fi-amber { background: rgba(255,171,0,0.1); }
+  .fi-red { background: rgba(255,80,80,0.1); }
+  .fi-teal { background: rgba(0,200,180,0.1); }
+  .feature-title {
+    font-family: var(--ff); font-size: 18px; font-weight: 700;
+    margin-bottom: 10px; letter-spacing: -0.4px;
+  }
+  .feature-desc { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+  /* RFID SECTION */
+  .rfid-section { background: var(--bg2); }
+  .rfid-inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: center;
+  }
+  .rfid-visual {
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .rfid-card-ui {
+    width: 340px; height: 210px;
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border2); border-radius: 20px;
+    padding: 28px; position: relative; overflow: hidden;
+  }
+  .rfid-card-ui::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: rgba(0,229,160,0.05);
+  }
+  .rfid-chip {
+    width: 44px; height: 34px; border-radius: 6px;
+    background: linear-gradient(135deg, #d4a853, #f0c96a);
+    margin-bottom: 40px;
+  }
+  .rfid-number {
+    font-family: var(--ff); font-size: 18px; letter-spacing: 4px;
+    color: var(--text2); margin-bottom: 10px;
+  }
+  .rfid-name { font-size: 13px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+  .rfid-logo-corner {
+    position: absolute; top: 24px; right: 24px;
+    font-family: var(--ff); font-size: 14px; font-weight: 700; color: var(--accent);
+  }
+  .rfid-waves {
+    position: absolute; bottom: 24px; right: 24px;
+  }
+  .rfid-pulse {
+    position: absolute; inset: -40px;
+    border: 2px solid rgba(0,229,160,0.15);
+    border-radius: 50%; animation: expand 2.5s infinite;
+  }
+  .rfid-pulse:nth-child(2) { animation-delay: 0.8s; }
+  .rfid-pulse:nth-child(3) { animation-delay: 1.6s; }
+  @keyframes expand {
+    from{ transform:scale(0.3); opacity:0.6; }
+    to{ transform:scale(1); opacity:0; }
+  }
+  .rfid-steps { list-style: none; display: flex; flex-direction: column; gap: 20px; }
+  .rfid-step {
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .rfid-step-num {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--ff); font-size: 13px; font-weight: 700; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .rfid-step-text h4 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .rfid-step-text p { font-size: 13px; color: var(--text2); }
+
+  /* APP SECTION */
+  .app-section { background: var(--bg); }
+  .app-inner {
+    display: grid; grid-template-columns: 1fr 1.1fr; gap: 80px; align-items: center;
+  }
+  .app-screens {
+    display: flex; gap: 16px; align-items: flex-end; justify-content: center;
+  }
+  .phone-mock {
+    width: 160px; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: 28px;
+    overflow: hidden; padding: 0;
+  }
+  .phone-mock.tall { transform: translateY(-24px); }
+  .phone-header {
+    background: var(--surface2); padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .phone-time { font-size: 11px; font-weight: 600; }
+  .phone-signal { font-size: 10px; color: var(--text3); }
+  .phone-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .phone-body { padding: 14px 14px 18px; }
+  .phone-map-placeholder {
+    height: 100px; background: var(--bg2); border-radius: 10px;
+    margin-bottom: 12px; overflow: hidden; position: relative;
+  }
+  .map-dot {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(0,229,160,0.2);
+  }
+  .map-line {
+    position: absolute; background: rgba(0,229,160,0.3);
+    height: 2px; transform-origin: left center;
+  }
+  .phone-stat-row {
+    display: flex; gap: 8px; margin-bottom: 10px;
+  }
+  .phone-stat {
+    flex: 1; background: var(--bg2); border-radius: 8px;
+    padding: 10px 10px; text-align: center;
+  }
+  .ps-val { font-size: 16px; font-weight: 600; color: var(--accent); display: block; }
+  .ps-lab { font-size: 10px; color: var(--text3); }
+  .phone-ride-card {
+    background: var(--bg2); border-radius: 10px; padding: 12px;
+    margin-bottom: 8px;
+  }
+  .prc-row { display: flex; justify-content: space-between; align-items: center; }
+  .prc-label { font-size: 11px; color: var(--text3); }
+  .prc-val { font-size: 12px; font-weight: 500; }
+  .prc-status {
+    display: inline-block; padding: 3px 8px; border-radius: 100px;
+    font-size: 10px; font-weight: 600;
+  }
+  .status-active { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .app-features { display: flex; flex-direction: column; gap: 28px; }
+  .app-feature { display: flex; gap: 16px; align-items: flex-start; }
+  .af-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .af-text h4 { font-family: var(--ff); font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .af-text p { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+  /* PRICING */
+  .pricing { background: var(--bg2); }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 900px;
+  }
+  .price-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 36px 28px;
+    transition: border-color 0.25s;
+  }
+  .price-card:hover { border-color: var(--border2); }
+  .price-card.featured {
+    background: var(--surface); border-color: var(--accent);
+    position: relative;
+  }
+  .featured-badge {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #06090f;
+    padding: 4px 16px; border-radius: 100px;
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+  }
+  .price-plan { font-size: 13px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+  .price-amount {
+    font-family: var(--ff); font-size: 44px; font-weight: 800;
+    letter-spacing: -2px; margin-bottom: 4px;
+  }
+  .price-amount sup { font-size: 20px; vertical-align: super; }
+  .price-period { font-size: 13px; color: var(--text3); margin-bottom: 28px; }
+  .price-feats { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .price-feats li { font-size: 14px; color: var(--text2); display: flex; align-items: center; gap: 10px; }
+  .price-feats li::before { content: '✓'; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+  .btn-plan {
+    width: 100%; padding: 12px; border-radius: 10px;
+    font-family: var(--fb); font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s; text-align: center; display: block; text-decoration: none;
+    border: 1px solid var(--border2); background: transparent; color: var(--text);
+  }
+  .btn-plan:hover { background: var(--surface); }
+  .btn-plan.featured { background: var(--accent); color: #06090f; border-color: var(--accent); }
+  .btn-plan.featured:hover { opacity: 0.88; }
+
+  /* TESTIMONIALS */
+  .testimonials { background: var(--bg); }
+  .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .testi-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 24px;
+    transition: border-color 0.25s;
+  }
+  .testi-card:hover { border-color: var(--border2); }
+  .testi-stars { color: #f5a623; font-size: 14px; margin-bottom: 16px; letter-spacing: 2px; }
+  .testi-text { font-size: 15px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; }
+  .testi-author { display: flex; align-items: center; gap: 12px; }
+  .testi-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px;
+  }
+  .testi-name { font-size: 14px; font-weight: 500; }
+  .testi-role { font-size: 12px; color: var(--text3); }
+
+  /* CTA */
+  .cta-section {
+    background: var(--bg2);
+    padding: 120px 60px;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .cta-glow {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 600px; height: 300px;
+    background: radial-gradient(ellipse, rgba(0,229,160,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cta-section h2 {
+    font-family: var(--ff); font-size: clamp(36px, 5vw, 60px);
+    font-weight: 800; letter-spacing: -2px; line-height: 1.1; margin-bottom: 20px;
+  }
+  .cta-section p { font-size: 18px; color: var(--text2); margin-bottom: 40px; font-weight: 300; }
+
+  /* FOOTER */
+  footer {
+    background: var(--bg); border-top: 1px solid var(--border);
+    padding: 60px 60px 36px;
+  }
+  .footer-top {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px;
+    margin-bottom: 60px;
+  }
+  .footer-brand p { font-size: 14px; color: var(--text3); line-height: 1.7; margin-top: 14px; max-width: 280px; }
+  .footer-col h5 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text3); margin-bottom: 20px;
+  }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .footer-col a { color: var(--text2); text-decoration: none; font-size: 14px; transition: color 0.2s; }
+  .footer-col a:hover { color: var(--text); }
+  .footer-bottom {
+    border-top: 1px solid var(--border); padding-top: 28px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-bottom p { font-size: 13px; color: var(--text3); }
+  .footer-bottom-links { display: flex; gap: 24px; }
+  .footer-bottom-links a { font-size: 13px; color: var(--text3); text-decoration: none; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  /* ANIMATIONS */
+  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <div class="logo-icon">🚲</div>
+    Kuet<span>Track</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#app">App</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="contact.html">Contact</a></li>
+    <li><a href="admin-login.html" style="color:var(--accent3);">🛡️ Admin</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="login_rfid.html" class="btn-outline">Login</a>
+    <a href="register.html" class="btn-primary">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    IoT-Powered Smart Mobility Platform
+  </div>
+  <h1>Rent. Ride. <span class="green">Track.</span><br/>In <span class="blue">Real Time.</span></h1>
+  <p class="hero-sub">A complete IoT-based bike rental and GPS tracking system with RFID access control, live monitoring, and smart fleet management.</p>
+  <div class="hero-actions">
+    <a href="register.html" class="btn-hero">🚀 &nbsp;Start Riding Free</a>
+    <a href="#how" class="btn-hero-sec">▶ &nbsp;See How It Works</a>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="section-header fade-in">
+    <div class="section-label">Process</div>
+    <h2 class="section-title">How KuetTrack Works</h2>
+    <p class="section-sub">Four simple steps from registration to riding — powered by IoT, RFID, and real-time GPS tracking.</p>
+  </div>
+  <div class="steps-grid fade-in">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <span class="step-icon">📱</span>
+      <div class="step-title">Register & Link Card</div>
+      <p class="step-desc">Create your account via the app. Register your RFID card to your profile and top up your wallet balance.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <span class="step-icon">📍</span>
+      <div class="step-title">Find a Bike</div>
+      <p class="step-desc">Use the live map to find the nearest available bike at any docking station around the city.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <span class="step-icon">💳</span>
+      <div class="step-title">Tap & Unlock</div>
+      <p class="step-desc">Tap your RFID card on the bike's reader. The system verifies your identity and unlocks the bike instantly.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <span class="step-icon">🛰️</span>
+      <div class="step-title">Ride & Return</div>
+      <p class="step-desc">Your ride is tracked in real time via GPS. Return the bike and tap your card to end the session and auto-deduct fare.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-header fade-in">
+    <div class="section-label">Platform</div>
+    <h2 class="section-title">Everything You Need</h2>
+    <p class="section-sub">Built on modern IoT infrastructure for reliable, secure, and scalable urban bike sharing.</p>
+  </div>
+  <div class="features-grid fade-in">
+    <div class="feature-card">
+      <div class="feature-icon-wrap fi-green">🔒</div>
+      <div class="feature-title">RFID Access Control</div>
+      <p class="feature-desc">Each user gets a unique RFID card linked to their account. One tap unlocks or locks the bike — no keys, no PINs needed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap fi-blue">🛰️</div>
+      <div class="feature-title">Live GPS Tracking</div>
+      <p class="feature-desc">Every bike transmits its location in real time via GPS + GSM. Track your ride live and view full route history from the app.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap fi-purple">⚡</div>
+      <div class="feature-title">Instant Notifications</div>
+      <p class="feature-desc">Get alerts for ride start, session end, payment deduction, bike pickup, and unauthorized movement detection.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap fi-amber">💰</div>
+      <div class="feature-title">Smart Billing</div>
+      <p class="feature-desc">Fare is calculated automatically based on ride duration. Wallet balance is deducted at session end — transparent and instant.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap fi-red">🚨</div>
+      <div class="feature-title">Anti-Theft System</div>
+      <p class="feature-desc">If a bike moves without a valid RFID unlock, the system triggers an alert immediately — protecting your fleet 24/7.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon-wrap fi-teal">📊</div>
+      <div class="feature-title">Admin Dashboard</div>
+      <p class="feature-desc">Full fleet visibility for operators — monitor all bikes, active sessions, station status, usage analytics, and revenue in one place.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RFID SECTION -->
+<section class="rfid-section" id="rfid">
+  <div class="rfid-inner fade-in">
+    <div>
+      <div class="section-label">Technology</div>
+      <h2 class="section-title">RFID — Your Smart Key</h2>
+      <p class="section-sub" style="margin-bottom: 40px;">Your RFID card is your identity at the bike dock. One tap connects you to the entire KuetTrack ecosystem.</p>
+      <ul class="rfid-steps">
+        <li class="rfid-step">
+          <div class="rfid-step-num">1</div>
+          <div class="rfid-step-text">
+            <h4>Identity Verification</h4>
+            <p>The reader captures your card's unique UID and checks it against the backend database in milliseconds.</p>
+          </div>
+        </li>
+        <li class="rfid-step">
+          <div class="rfid-step-num">2</div>
+          <div class="rfid-step-text">
+            <h4>Balance Check</h4>
+            <p>System confirms your wallet has sufficient balance before allowing the unlock to proceed.</p>
+          </div>
+        </li>
+        <li class="rfid-step">
+          <div class="rfid-step-num">3</div>
+          <div class="rfid-step-text">
+            <h4>Bike Unlock & Session Start</h4>
+            <p>The microcontroller activates the solenoid lock, releases the bike, and starts the rental timer.</p>
+          </div>
+        </li>
+        <li class="rfid-step">
+          <div class="rfid-step-num">4</div>
+          <div class="rfid-step-text">
+            <h4>Return & Auto-Deduction</h4>
+            <p>Tap again to lock and end the session. Fare is calculated and deducted from your wallet instantly.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="rfid-visual">
+      <div style="position:relative; width:340px; height:340px; display:flex; align-items:center; justify-content:center;">
+        <div class="rfid-pulse"></div>
+        <div class="rfid-pulse"></div>
+        <div class="rfid-pulse"></div>
+        <div class="rfid-card-ui">
+          <div class="rfid-logo-corner">KuetTrack</div>
+          <div class="rfid-chip"></div>
+          <div class="rfid-number">**** **** **** 4821</div>
+          <div class="rfid-name">Md. Rahul Islam</div>
+          <div class="rfid-waves" style="font-size:22px; color: rgba(255,255,255,0.2);">))))</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP SECTION -->
+<section class="app-section" id="app">
+  <div class="app-inner fade-in">
+    <div class="app-screens">
+      <div class="phone-mock">
+        <div class="phone-header">
+          <div class="phone-status">
+            <span class="phone-time">9:41</span>
+            <span class="phone-signal">●●●</span>
+          </div>
+          <div class="phone-title">Find a Bike</div>
+        </div>
+        <div class="phone-body">
+          <div class="phone-map-placeholder">
+            <div class="map-dot" style="top:40px; left:60px;"></div>
+            <div class="map-dot" style="top:20px; left:110px; background:var(--accent2); box-shadow: 0 0 0 4px rgba(0,136,255,0.2);"></div>
+            <div class="map-dot" style="top:65px; left:80px; background:var(--accent3); box-shadow: 0 0 0 4px rgba(124,92,252,0.2);"></div>
+            <div class="map-line" style="top:45px; left:65px; width:50px; transform: rotate(-12deg);"></div>
+          </div>
+          <div class="phone-stat-row">
+            <div class="phone-stat">
+              <span class="ps-val">8</span>
+              <span class="ps-lab">Nearby</span>
+            </div>
+            <div class="phone-stat">
+              <span class="ps-val">0.3</span>
+              <span class="ps-lab">km away</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-mock tall">
+        <div class="phone-header">
+          <div class="phone-status">
+            <span class="phone-time">9:44</span>
+            <span class="phone-signal">●●●</span>
+          </div>
+          <div class="phone-title">Active Ride</div>
+        </div>
+        <div class="phone-body">
+          <div class="phone-ride-card">
+            <div class="prc-row" style="margin-bottom:8px;">
+              <span class="prc-label">Bike ID</span>
+              <span class="prc-val">#VT-042</span>
+            </div>
+            <div class="prc-row" style="margin-bottom:8px;">
+              <span class="prc-label">Duration</span>
+              <span class="prc-val">12 min</span>
+            </div>
+            <div class="prc-row">
+              <span class="prc-label">Status</span>
+              <span class="prc-status status-active">Active</span>
+            </div>
+          </div>
+          <div class="phone-stat-row">
+            <div class="phone-stat">
+              <span class="ps-val">4.2</span>
+              <span class="ps-lab">km</span>
+            </div>
+            <div class="phone-stat">
+              <span class="ps-val">৳18</span>
+              <span class="ps-lab">fare</span>
+            </div>
+          </div>
+          <div class="phone-map-placeholder">
+            <div class="map-dot" style="top:30px; left:20px;"></div>
+            <div class="map-line" style="top:34px; left:26px; width:80px; transform: rotate(15deg);"></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-mock">
+        <div class="phone-header">
+          <div class="phone-status">
+            <span class="phone-time">9:52</span>
+            <span class="phone-signal">●●●</span>
+          </div>
+          <div class="phone-title">My Wallet</div>
+        </div>
+        <div class="phone-body">
+          <div style="text-align:center; padding: 12px 0 16px;">
+            <div style="font-size:11px; color:var(--text3); margin-bottom:4px;">Balance</div>
+            <div style="font-family:var(--ff); font-size:30px; font-weight:800; color:var(--accent);">৳240</div>
+          </div>
+          <div class="phone-ride-card" style="margin-bottom:8px;">
+            <div class="prc-row">
+              <span class="prc-label">Last ride</span>
+              <span class="prc-val" style="color:var(--accent);">- ৳18</span>
+            </div>
+          </div>
+          <div class="phone-ride-card">
+            <div class="prc-row">
+              <span class="prc-label">Top-up</span>
+              <span class="prc-val" style="color:#4caf50;">+ ৳200</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Mobile App</div>
+      <h2 class="section-title">Control Everything<br/>From Your Phone</h2>
+      <p class="section-sub" style="margin-bottom: 40px;">The KuetTrack app gives you full control over your rental experience — from finding a bike to managing your wallet.</p>
+      <div class="app-features">
+        <div class="app-feature">
+          <div class="af-icon">🗺️</div>
+          <div class="af-text">
+            <h4>Live Bike Map</h4>
+            <p>See all available bikes near you in real time. Filter by distance, battery level, or station.</p>
+          </div>
+        </div>
+        <div class="app-feature">
+          <div class="af-icon">📈</div>
+          <div class="af-text">
+            <h4>Ride Analytics</h4>
+            <p>Track total rides, distance, CO₂ saved, and spending — all in your personal dashboard.</p>
+          </div>
+        </div>
+        <div class="app-feature">
+          <div class="af-icon">💳</div>
+          <div class="af-text">
+            <h4>Wallet & Payments</h4>
+            <p>Top up your balance, view transaction history, and manage payment methods easily.</p>
+          </div>
+        </div>
+        <div class="app-feature">
+          <div class="af-icon">🔔</div>
+          <div class="af-text">
+            <h4>Smart Alerts</h4>
+            <p>Get push notifications for ride events, low balance warnings, and station updates.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-header fade-in">
+    <div class="section-label">Plans</div>
+    <h2 class="section-title">Simple, Fair Pricing</h2>
+    <p class="section-sub">Pay as you go or save more with a monthly pass. No hidden fees, ever.</p>
+  </div>
+  <div class="pricing-grid fade-in">
+    <div class="price-card">
+      <div class="price-plan">Basic</div>
+      <div class="price-amount"><sup>৳</sup>0</div>
+      <div class="price-period">Free to register</div>
+      <ul class="price-feats">
+        <li>RFID card (one-time ৳50)</li>
+        <li>Pay-per-ride billing</li>
+        <li>Live bike map</li>
+        <li>Ride history</li>
+        <li>Basic support</li>
+      </ul>
+      <a href="#" class="btn-plan">Get Started Free</a>
+    </div>
+    <div class="price-card featured">
+      <div class="featured-badge">Most Popular</div>
+      <div class="price-plan">Monthly Pass</div>
+      <div class="price-amount"><sup>৳</sup>299</div>
+      <div class="price-period">per month</div>
+      <ul class="price-feats">
+        <li>Unlimited 60-min rides</li>
+        <li>Priority bike availability</li>
+        <li>Full ride analytics</li>
+        <li>RFID card included</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="#" class="btn-plan featured">Start Monthly Pass</a>
+    </div>
+    <div class="price-card">
+      <div class="price-plan">Student</div>
+      <div class="price-amount"><sup>৳</sup>149</div>
+      <div class="price-period">per month</div>
+      <ul class="price-feats">
+        <li>Unlimited 45-min rides</li>
+        <li>University ID required</li>
+        <li>Full ride analytics</li>
+        <li>RFID card included</li>
+        <li>Email support</li>
+      </ul>
+      <a href="#" class="btn-plan">Get Student Plan</a>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-header fade-in">
+    <div class="section-label">Community</div>
+    <h2 class="section-title">Loved by Riders</h2>
+    <p class="section-sub">What our users say about riding with KuetTrack every day.</p>
+  </div>
+  <div class="testimonials-grid fade-in">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"The RFID tap is incredibly fast — I just tap and go. No waiting, no app loading. The GPS tracking gives me peace of mind on every ride."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(0,229,160,0.1); color:var(--accent);">RI</div>
+        <div>
+          <div class="testi-name">Rafiq Islam</div>
+          <div class="testi-role">Daily commuter, Khulna</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"The student plan is amazing value. I use it to commute to KU every day and the app always shows me the nearest available bike in real time."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(0,136,255,0.1); color:var(--accent2);">SB</div>
+        <div>
+          <div class="testi-name">Sadia Begum</div>
+          <div class="testi-role">University student</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"As a fleet manager, the admin dashboard is a game-changer. I can see all 200 bikes on one screen and get instant alerts for any issues."</p>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background:rgba(124,92,252,0.1); color:var(--accent3);">KH</div>
+        <div>
+          <div class="testi-name">Kamrul Hasan</div>
+          <div class="testi-role">Fleet operator</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="contact">
+  <div class="cta-glow"></div>
+  <div class="section-label" style="justify-content:center; display:flex;">Get Started Today</div>
+  <h2>Ready to Ride<br/>the Smart Way?</h2>
+  <p>Join thousands of riders across the city. Register free, get your RFID card, and start riding in minutes.</p>
+  <div style="display:flex; gap:16px; justify-content:center; margin-bottom:48px;">
+    <a href="register.html" class="btn-hero">🚲 &nbsp;Create Free Account</a>
+    <a href="contact.html" class="btn-hero-sec">📞 &nbsp;Contact Us</a>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:12px; align-items:center; font-size:15px; color:var(--text2);">
+    <div>📧 <a href="mailto:support@kuettrack.com" style="color:var(--accent); text-decoration:none;">support@kuettrack.com</a></div>
+    <div>📞 <a href="tel:+8801234567890" style="color:var(--text2); text-decoration:none;">+880 1234 567890</a></div>
+    <div>📍 Khulna, Bangladesh</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="logo">
+        <div class="logo-icon">🚲</div>
+        Kuet<span>Track</span>
+      </div>
+      <p>An IoT-based smart bike rental and real-time GPS tracking platform for modern urban mobility — built with RFID, GPS, and cloud technology.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Product</h5>
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How It Works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#app">Mobile App</a></li>
+        <li><a href="admin-login.html">Admin Panel</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Technology</h5>
+      <ul>
+        <li><a href="index.html#rfid">RFID System</a></li>
+        <li><a href="index.html#features">GPS Tracking</a></li>
+        <li><a href="index.html#features">IoT Hardware</a></li>
+        <li><a href="support.html">API Docs</a></li>
+        <li><a href="privacy.html">Security</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Company</h5>
+      <ul>
+        <li><a href="about.html">About</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 Kuet. IoT Bike Rental & Tracking System.</p>
+    <div class="footer-bottom-links">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="support.html">Support</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('nav');
+    nav.style.padding = window.scrollY > 50 ? '12px 60px' : '18px 60px';
+  });
+
+  const counters = document.querySelectorAll('.stat-num');
+  const countObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting) {
+        const el = e.target;
+        const target = el.textContent;
+        const isNum = parseFloat(target);
+        if(!isNaN(isNum) && !target.includes('K') && !target.includes('%')) {
+          let cur = 0;
+          const step = isNum / 40;
+          const t = setInterval(() => {
+            cur = Math.min(cur + step, isNum);
+            el.textContent = Math.round(cur);
+            if(cur >= isNum) clearInterval(t);
+          }, 30);
+        }
+      }
+    });
+  }, { threshold: 1 });
+  counters.forEach(c => countObserver.observe(c));
+</script>
+</body>
+</html>

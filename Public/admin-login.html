@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Login — KuetTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06090f;--bg2:#0c1018;--surface:#161c28;--surface2:#1d2535;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#00e5a0;--accent2:#0088ff;--accent3:#7c5cfc;
+  --text:#f0f4ff;--text2:#8b95b0;--text3:#5a6175;
+  --ff:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+  --radius:16px;--radius-sm:10px;--error:#ff5050;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.6;min-height:100vh;overflow-x:hidden;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 48px;background:rgba(6,9,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{font-family:var(--ff);font-size:20px;font-weight:800;letter-spacing:-0.5px;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.logo span{color:var(--accent);}
+.admin-badge{display:flex;align-items:center;gap:8px;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.25);border-radius:100px;padding:5px 14px;font-size:12px;color:var(--accent3);font-weight:600;}
+
+/* LAYOUT */
+.page-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 65px);}
+
+/* LEFT */
+.left-col{background:var(--bg2);border-right:1px solid var(--border);padding:64px 56px;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.left-col::before{content:'';position:absolute;top:-120px;left:-120px;width:560px;height:560px;background:radial-gradient(ellipse,rgba(124,92,252,0.09) 0%,transparent 65%);pointer-events:none;}
+.left-col::after{content:'';position:absolute;bottom:-80px;right:-80px;width:400px;height:400px;background:radial-gradient(ellipse,rgba(0,136,255,0.07) 0%,transparent 65%);pointer-events:none;}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(124,92,252,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,92,252,0.03) 1px,transparent 1px);background-size:50px 50px;mask-image:radial-gradient(ellipse 90% 70% at 30% 35%,black 20%,transparent 100%);pointer-events:none;}
+.left-inner{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;}
+.shield-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.2);border-radius:100px;font-size:12px;color:var(--accent3);margin-bottom:32px;width:fit-content;}
+.shield-dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.4);}}
+.left-inner h1{font-family:var(--ff);font-size:clamp(36px,3.5vw,52px);font-weight:800;line-height:1.0;letter-spacing:-2.5px;margin-bottom:20px;}
+.left-inner h1 .purple{color:var(--accent3);}
+.left-inner h1 .green{color:var(--accent);}
+.left-inner>p{font-size:16px;color:var(--text2);line-height:1.75;max-width:360px;margin-bottom:44px;}
+.admin-perms{display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
+.perm-item{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;}
+.perm-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.pi-purple{background:rgba(124,92,252,0.12);}
+.pi-green{background:rgba(0,229,160,0.1);}
+.pi-blue{background:rgba(0,136,255,0.1);}
+.pi-red{background:rgba(255,80,80,0.1);}
+.perm-text{font-size:13px;font-weight:500;}
+.perm-text span{font-size:11px;color:var(--text3);display:block;font-weight:400;}
+.security-notice{background:rgba(255,171,0,0.06);border:1px solid rgba(255,171,0,0.15);border-radius:var(--radius-sm);padding:14px 16px;font-size:13px;color:#f5a623;display:flex;align-items:flex-start;gap:10px;}
+.left-footer{position:relative;z-index:1;margin-top:36px;font-size:12px;color:var(--text3);}
+
+/* RIGHT */
+.right-col{padding:64px 56px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.form-shell{width:100%;max-width:420px;animation:slideUp 0.55s cubic-bezier(.22,.68,0,1.2) both;}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+.form-eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);font-weight:600;margin-bottom:10px;}
+.form-title{font-family:var(--ff);font-size:34px;font-weight:800;letter-spacing:-1.5px;margin-bottom:6px;}
+.form-sub{font-size:15px;color:var(--text2);margin-bottom:36px;}
+.form-sub a{color:var(--accent);text-decoration:none;}
+.form-sub a:hover{text-decoration:underline;}
+.alert-box{padding:13px 16px;border-radius:var(--radius-sm);font-size:14px;margin-bottom:22px;display:none;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.alert-box.show{display:flex;align-items:center;gap:10px;}
+.alert-error{background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);color:#ff8888;}
+.alert-success{background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.25);color:var(--accent);}
+.form-group{margin-bottom:18px;}
+.form-label{font-size:13px;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.input-wrap{position:relative;}
+.form-input{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:13px 16px;color:var(--text);font-family:var(--fb);font-size:15px;transition:border-color 0.2s,box-shadow 0.2s;outline:none;}
+.form-input:focus{border-color:var(--accent3);box-shadow:0 0 0 3px rgba(124,92,252,0.12);}
+.form-input.error{border-color:var(--error);}
+.input-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;}
+.pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px;}
+.pw-toggle:hover{color:var(--text2);}
+.field-error{font-size:12px;color:var(--error);margin-top:6px;display:none;}
+.field-error.show{display:block;}
+.submit-btn{width:100%;padding:15px;border-radius:var(--radius-sm);background:var(--accent3);color:#fff;font-family:var(--ff);font-size:16px;font-weight:700;border:none;cursor:pointer;transition:opacity 0.2s,transform 0.15s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;}
+.submit-btn:hover:not(:disabled){opacity:0.88;transform:translateY(-1px);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.back-link{text-align:center;margin-top:24px;font-size:14px;color:var(--text3);}
+.back-link a{color:var(--accent);text-decoration:none;}
+.back-link a:hover{text-decoration:underline;}
+@media(max-width:768px){.page-wrap{grid-template-columns:1fr;}.left-col{display:none;}.right-col{padding:40px 28px;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html" class="logo">
+    <div class="logo-icon">🚲</div>
+    Kuet<span>Track</span>
+  </a>
+  <div class="admin-badge">🛡️ &nbsp;Admin Portal</div>
+</header>
+
+<div class="page-wrap">
+  <!-- LEFT -->
+  <div class="left-col">
+    <div class="bg-grid"></div>
+    <div class="left-inner">
+      <div class="shield-badge"><div class="shield-dot"></div>Secure Admin Access</div>
+      <h1>Fleet Control<br/><span class="purple">Command</span><br/><span class="green">Center.</span></h1>
+      <p>Full administrative access to manage users, bikes, stations, RFID assignments, live tracking, and system analytics.</p>
+      <div class="admin-perms">
+        <div class="perm-item"><div class="perm-icon pi-purple">👥</div><div class="perm-text">User Management<span>View, edit, suspend user accounts</span></div></div>
+        <div class="perm-item"><div class="perm-icon pi-green">🚲</div><div class="perm-text">Fleet Control<span>Monitor all bikes & stations live</span></div></div>
+        <div class="perm-item"><div class="perm-icon pi-blue">💳</div><div class="perm-text">RFID Assignment<span>Link & manage RFID cards</span></div></div>
+        <div class="perm-item"><div class="perm-icon pi-red">📊</div><div class="perm-text">Analytics & Revenue<span>Full system reports & insights</span></div></div>
+      </div>
+      <div class="security-notice">⚠️ &nbsp;This portal is restricted to authorized administrators only. Unauthorized access attempts are logged.</div>
+    </div>
+    <div class="left-footer">© 2026 Kuet Admin Portal — Secured</div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+    <div class="form-shell">
+      <div class="form-eyebrow">Admin Portal</div>
+      <div class="form-title">Welcome Back</div>
+      <div class="form-sub">Sign in with your administrator credentials.</div>
+
+      <div class="alert-box alert-error" id="alertBox">
+        <span>⚠️</span><span id="alertMsg">Invalid credentials.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Admin Email</label>
+        <div class="input-wrap">
+          <input class="form-input" id="email" type="email" placeholder="admin@kuettrack.com" autocomplete="email"/>
+          <span class="input-icon">✉️</span>
+        </div>
+        <div class="field-error" id="emailErr">Please enter a valid email.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <input class="form-input" id="password" type="password" placeholder="Enter your password" autocomplete="current-password"/>
+          <button class="pw-toggle" type="button" onclick="togglePw()" id="pwToggle">👁️</button>
+        </div>
+        <div class="field-error" id="pwErr">Password is required.</div>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" onclick="adminLogin()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">🛡️ &nbsp;Sign In as Admin</span>
+      </button>
+
+      <div class="back-link">Not an admin? <a href="login.html">Go to User Login →</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+
+function togglePw(){
+  const i=document.getElementById('password');
+  const t=document.getElementById('pwToggle');
+  if(i.type==='password'){i.type='text';t.textContent='🙈';}
+  else{i.type='password';t.textContent='👁️';}
+}
+
+function showAlert(msg){
+  const b=document.getElementById('alertBox');
+  document.getElementById('alertMsg').textContent=msg;
+  b.classList.add('show','alert-error');b.classList.remove('alert-success');
+}
+
+function setLoading(on){
+  document.getElementById('spinner').style.display=on?'block':'none';
+  document.getElementById('btnText').style.display=on?'none':'flex';
+  document.getElementById('submitBtn').disabled=on;
+}
+
+async function adminLogin(){
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  let valid=true;
+  document.getElementById('emailErr').classList.remove('show');
+  document.getElementById('pwErr').classList.remove('show');
+  document.getElementById('alertBox').classList.remove('show');
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){document.getElementById('emailErr').classList.add('show');valid=false;}
+  if(!password){document.getElementById('pwErr').classList.add('show');valid=false;}
+  if(!valid)return;
+  setLoading(true);
+  try{
+    const res=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const data=await res.json();
+    if(!res.ok){showAlert(data.message||'Login failed.');setLoading(false);return;}
+    if(data.user?.role!=='admin'){showAlert('Access denied. You do not have admin privileges.');setLoading(false);return;}
+    localStorage.setItem('kuettrack_admin_token',data.token);
+    localStorage.setItem('kuettrack_admin',JSON.stringify(data.user));
+    window.location.href='admin-dashboard.html';
+  }catch(e){
+    showAlert('Cannot connect to server. Make sure the backend is running.');
+    setLoading(false);
+  }
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter')adminLogin();});
+
+// Redirect if already logged in as admin
+const t=localStorage.getItem('kuettrack_admin_token');
+if(t){window.location.href='admin-dashboard.html';}
+</script>
+</body>
+</html>

@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — KuetTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06090f;--bg2:#0c1018;--bg3:#111620;
+  --surface:#161c28;--surface2:#1d2535;--surface3:#222b3a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18);
+  --accent:#00e5a0;--accent2:#0088ff;--accent3:#7c5cfc;--amber:#ffab00;--red:#ff5050;
+  --text:#f0f4ff;--text2:#8b95b0;--text3:#5a6175;
+  --ff:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+  --r:14px;--r-sm:10px;--r-lg:20px;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.6;min-height:100vh;display:flex;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:260px;min-width:260px;background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  transition:transform 0.3s;z-index:200;
+}
+.sidebar-logo{
+  padding:28px 24px 20px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+  font-family:var(--ff);font-size:20px;font-weight:800;
+}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.logo-icon span{color:#fff;}
+.sidebar-logo .green{color:var(--accent);}
+.sidebar-user{
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--border);
+}
+.user-card{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r-sm);padding:12px;
+}
+.user-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,229,160,0.2),rgba(0,136,255,0.2));
+  border:2px solid rgba(0,229,160,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--ff);font-size:15px;font-weight:700;color:var(--accent);
+  flex-shrink:0;
+}
+.user-info{min-width:0;}
+.user-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-plan{font-size:11px;color:var(--text3);}
+.plan-badge{
+  display:inline-block;padding:2px 8px;border-radius:100px;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
+}
+.plan-basic{background:rgba(255,255,255,0.06);color:var(--text3);}
+.plan-monthly{background:rgba(0,229,160,0.12);color:var(--accent);}
+.plan-student{background:rgba(0,136,255,0.12);color:var(--accent2);}
+
+.sidebar-nav{padding:16px 12px;flex:1;}
+.nav-section-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);padding:8px 12px 6px;font-weight:600;}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;border-radius:var(--r-sm);
+  color:var(--text2);font-size:14px;cursor:pointer;
+  transition:background 0.2s,color 0.2s;
+  text-decoration:none;margin-bottom:2px;
+  border:none;background:none;width:100%;text-align:left;
+  font-family:var(--fb);
+}
+.nav-item:hover{background:var(--surface);color:var(--text);}
+.nav-item.active{background:rgba(0,229,160,0.1);color:var(--accent);border:1px solid rgba(0,229,160,0.15);}
+.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--accent);color:#06090f;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
+.sidebar-bottom{padding:16px 12px;border-top:1px solid var(--border);}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden;}
+.topbar{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 36px;
+  background:rgba(6,9,15,0.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.topbar-left{display:flex;align-items:center;gap:16px;}
+.topbar-title{font-family:var(--ff);font-size:18px;font-weight:700;letter-spacing:-0.5px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.icon-btn{
+  width:38px;height:38px;border-radius:var(--r-sm);
+  background:var(--surface);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;transition:background 0.2s;
+  position:relative;
+}
+.icon-btn:hover{background:var(--surface2);}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--accent);}
+.wallet-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r-sm);padding:7px 14px;
+  font-size:14px;cursor:pointer;transition:background 0.2s;
+}
+.wallet-chip:hover{background:var(--surface2);}
+.wallet-chip .w-bal{font-family:var(--ff);font-weight:700;color:var(--accent);}
+
+/* ── PAGE CONTENT ── */
+.page{padding:32px 36px;display:none;}
+.page.active{display:block;}
+
+/* ── METRIC CARDS ── */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+.metric-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px 20px;transition:border-color 0.2s,transform 0.2s;cursor:default;
+}
+.metric-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.metric-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.metric-val{font-family:var(--ff);font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.metric-sub{font-size:12px;color:var(--text3);margin-top:6px;}
+.metric-change{font-size:12px;margin-top:6px;}
+.up{color:var(--accent);}
+.down{color:var(--red);}
+
+/* ── GRID LAYOUT ── */
+.dash-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;}
+.dash-grid-full{display:grid;grid-template-columns:1fr;gap:20px;}
+
+/* ── CARD ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 24px 16px;border-bottom:1px solid var(--border);
+}
+.card-title{font-family:var(--ff);font-size:16px;font-weight:700;letter-spacing:-0.3px;}
+.card-body{padding:20px 24px;}
+.card-action{font-size:13px;color:var(--accent);cursor:pointer;text-decoration:none;}
+.card-action:hover{text-decoration:underline;}
+
+/* ── MAP PLACEHOLDER ── */
+.map-container{
+  height:320px;background:var(--bg3);border-radius:var(--r-sm);
+  position:relative;overflow:hidden;
+}
+.map-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,229,160,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.map-road-h{position:absolute;height:2px;background:rgba(255,255,255,0.06);left:0;right:0;}
+.map-road-v{position:absolute;width:2px;background:rgba(255,255,255,0.06);top:0;bottom:0;}
+.map-station{
+  position:absolute;width:14px;height:14px;border-radius:50%;
+  background:var(--accent);border:2px solid #06090f;cursor:pointer;
+  transition:transform 0.2s;
+}
+.map-station:hover{transform:scale(1.4);}
+.map-station.empty{background:var(--text3);}
+.map-station.few{background:var(--amber);}
+.map-station.user-pos{
+  width:16px;height:16px;background:var(--accent2);
+  box-shadow:0 0 0 6px rgba(0,136,255,0.2);
+}
+.map-station-pulse{
+  position:absolute;width:30px;height:30px;border-radius:50%;
+  border:2px solid rgba(0,229,160,0.3);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:mp 2s infinite;
+}
+@keyframes mp{from{transform:translate(-50%,-50%) scale(0.5);opacity:0.8;}to{transform:translate(-50%,-50%) scale(1.5);opacity:0;}}
+.map-tooltip{
+  position:absolute;background:var(--surface);border:1px solid var(--border2);
+  border-radius:8px;padding:8px 12px;font-size:12px;
+  white-space:nowrap;pointer-events:none;z-index:10;
+  transform:translateX(-50%) translateY(-110%);
+}
+.map-legend{
+  position:absolute;bottom:14px;left:14px;
+  background:rgba(6,9,15,0.85);backdrop-filter:blur(10px);
+  border:1px solid var(--border2);border-radius:8px;padding:10px 14px;
+  display:flex;gap:14px;
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+
+/* ── BIKE CARDS ── */
+.bikes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.bike-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px;transition:border-color 0.25s,transform 0.2s;cursor:pointer;
+  position:relative;overflow:hidden;
+}
+.bike-card:hover{border-color:var(--border2);transform:translateY(-3px);}
+.bike-card.selected{border-color:var(--accent);}
+.bike-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s;}
+.bike-card:hover::before,.bike-card.selected::before{opacity:1;}
+.bike-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.bike-id{font-family:var(--ff);font-size:16px;font-weight:700;}
+.bike-status-badge{padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;}
+.bs-available{background:rgba(0,229,160,0.12);color:var(--accent);}
+.bs-busy{background:rgba(255,80,80,0.1);color:var(--red);}
+.bs-maintenance{background:rgba(255,171,0,0.1);color:var(--amber);}
+.bike-icon{font-size:36px;text-align:center;margin:8px 0 16px;}
+.bike-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.bstat{background:var(--surface);border-radius:8px;padding:8px 10px;}
+.bstat-val{font-size:14px;font-weight:600;color:var(--text);}
+.bstat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;}
+.bike-select-btn{
+  width:100%;margin-top:14px;padding:10px;border-radius:var(--r-sm);
+  background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);
+  color:var(--accent);font-family:var(--fb);font-size:13px;font-weight:600;
+  cursor:pointer;transition:background 0.2s;
+}
+.bike-select-btn:hover{background:rgba(0,229,160,0.18);}
+.bike-select-btn.selected-btn{background:var(--accent);color:#06090f;border-color:var(--accent);}
+.bike-select-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* ── STATION LIST ── */
+.station-list{display:flex;flex-direction:column;gap:10px;}
+.station-item{
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:12px 14px;transition:border-color 0.2s;cursor:pointer;
+}
+.station-item:hover{border-color:var(--border2);}
+.station-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.station-info{flex:1;min-width:0;}
+.station-name{font-size:14px;font-weight:500;}
+.station-addr{font-size:12px;color:var(--text3);}
+.station-meta{text-align:right;}
+.station-bikes{font-family:var(--ff);font-size:18px;font-weight:700;color:var(--accent);}
+.station-dist{font-size:11px;color:var(--text3);}
+
+/* ── RIDE HISTORY ── */
+.ride-table{width:100%;border-collapse:collapse;}
+.ride-table th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:0 16px 12px;text-align:left;font-weight:600;}
+.ride-table td{padding:14px 16px;border-top:1px solid var(--border);font-size:14px;}
+.ride-table tr:hover td{background:rgba(255,255,255,0.02);}
+.ride-status{padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;}
+
+/* ── ACTIVE RIDE ── */
+.active-ride-panel{
+  background:linear-gradient(135deg,rgba(0,229,160,0.08),rgba(0,136,255,0.05));
+  border:1px solid rgba(0,229,160,0.2);border-radius:var(--r);
+  padding:28px;margin-bottom:24px;
+  display:none;
+}
+.active-ride-panel.show{display:block;}
+.ar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+.ar-title{font-family:var(--ff);font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px;}
+.ar-live-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.5);}}
+.ar-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.ar-stat{background:rgba(0,0,0,0.2);border-radius:var(--r-sm);padding:16px;}
+.ar-val{font-family:var(--ff);font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--accent);}
+.ar-label{font-size:12px;color:var(--text2);}
+.end-ride-btn{
+  padding:12px 28px;border-radius:var(--r-sm);
+  background:var(--red);color:#fff;border:none;
+  font-family:var(--fb);font-size:14px;font-weight:600;cursor:pointer;
+  transition:opacity 0.2s;
+}
+.end-ride-btn:hover{opacity:0.85;}
+
+/* ── WALLET ── */
+.wallet-hero{
+  background:linear-gradient(135deg,var(--surface),var(--surface2));
+  border:1px solid var(--border2);border-radius:var(--r-lg);
+  padding:36px;margin-bottom:24px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.wallet-hero::before{
+  content:'';position:absolute;top:-80px;right:-80px;
+  width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(rgba(0,229,160,0.08),transparent);
+}
+.wallet-bal-label{font-size:13px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.wallet-balance{font-family:var(--ff);font-size:56px;font-weight:800;letter-spacing:-3px;color:var(--accent);}
+.wallet-currency{font-size:24px;vertical-align:super;}
+.wallet-actions{display:flex;gap:12px;justify-content:center;margin-top:24px;}
+.w-btn{
+  padding:12px 24px;border-radius:var(--r-sm);
+  font-family:var(--fb);font-size:14px;font-weight:600;cursor:pointer;
+  transition:opacity 0.2s,transform 0.15s;border:none;text-decoration:none;
+}
+.w-btn:hover{opacity:0.85;transform:translateY(-1px);}
+.w-btn-primary{background:var(--accent);color:#06090f;}
+.w-btn-sec{background:var(--surface2);color:var(--text);border:1px solid var(--border2) !important;}
+.topup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.topup-option{
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);
+  padding:18px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;
+}
+.topup-option:hover,.topup-option.selected{border-color:var(--accent);background:rgba(0,229,160,0.05);}
+.topup-amount{font-family:var(--ff);font-size:22px;font-weight:700;color:var(--accent);}
+.topup-label{font-size:12px;color:var(--text3);margin-top:4px;}
+.txn-list{display:flex;flex-direction:column;gap:0;}
+.txn-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 0;border-bottom:1px solid var(--border);
+}
+.txn-item:last-child{border-bottom:none;}
+.txn-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.txn-credit{background:rgba(0,229,160,0.1);}
+.txn-debit{background:rgba(255,80,80,0.1);}
+.txn-info{flex:1;}
+.txn-title{font-size:14px;font-weight:500;}
+.txn-date{font-size:12px;color:var(--text3);}
+.txn-amount{font-family:var(--ff);font-size:16px;font-weight:700;}
+.txn-plus{color:var(--accent);}
+.txn-minus{color:var(--red);}
+
+/* ── PROFILE ── */
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.form-group{margin-bottom:18px;}
+.form-label{font-size:13px;color:var(--text2);margin-bottom:8px;display:block;}
+.form-input{
+  width:100%;background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r-sm);padding:12px 16px;
+  color:var(--text);font-family:var(--fb);font-size:14px;
+  transition:border-color 0.2s;outline:none;
+}
+.form-input:focus{border-color:var(--accent);}
+.form-input:disabled{opacity:0.5;cursor:not-allowed;}
+.rfid-info{
+  background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.15);
+  border-radius:var(--r-sm);padding:16px 20px;
+  display:flex;align-items:center;gap:14px;margin-bottom:20px;
+}
+.rfid-status-icon{font-size:24px;}
+.rfid-text h4{font-size:14px;font-weight:600;margin-bottom:2px;}
+.rfid-text p{font-size:12px;color:var(--text3);}
+.rfid-uid{
+  margin-left:auto;font-family:var(--ff);font-size:12px;
+  background:var(--surface2);padding:6px 12px;border-radius:6px;
+  color:var(--accent);letter-spacing:2px;
+}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
+  z-index:500;display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.25s;
+}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);
+  padding:36px;width:100%;max-width:480px;
+  transform:translateY(20px) scale(0.97);transition:transform 0.25s;
+}
+.modal-overlay.show .modal{transform:translateY(0) scale(1);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.modal-title{font-family:var(--ff);font-size:20px;font-weight:800;}
+.modal-close{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:4px;}
+.modal-close:hover{color:var(--text);}
+.modal-btn{
+  width:100%;padding:14px;border-radius:var(--r-sm);
+  background:var(--accent);color:#06090f;
+  font-family:var(--fb);font-size:15px;font-weight:700;
+  border:none;cursor:pointer;transition:opacity 0.2s;margin-top:20px;
+}
+.modal-btn:hover{opacity:0.88;}
+
+/* ── CONFIRM RIDE ── */
+.confirm-bike-display{
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);
+  padding:20px;text-align:center;margin-bottom:20px;
+}
+.confirm-bike-id{font-family:var(--ff);font-size:24px;font-weight:800;color:var(--accent);}
+.confirm-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.confirm-row{display:flex;justify-content:space-between;font-size:14px;}
+.confirm-row span:first-child{color:var(--text2);}
+.confirm-row span:last-child{font-weight:500;}
+
+/* ── NOTIFICATION DRAWER ── */
+.notif-drawer{
+  position:fixed;top:0;right:0;bottom:0;width:360px;
+  background:var(--bg2);border-left:1px solid var(--border2);
+  z-index:300;transform:translateX(100%);transition:transform 0.3s;
+  display:flex;flex-direction:column;
+}
+.notif-drawer.open{transform:translateX(0);}
+.notif-drawer-header{
+  padding:24px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.notif-drawer-title{font-family:var(--ff);font-size:18px;font-weight:700;}
+.notif-list{flex:1;overflow-y:auto;padding:16px;}
+.notif-item{
+  padding:14px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:var(--surface);
+  margin-bottom:10px;
+}
+.notif-item-title{font-size:14px;font-weight:500;margin-bottom:4px;}
+.notif-item-time{font-size:12px;color:var(--text3);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:1000;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r-sm);padding:14px 20px;
+  display:flex;align-items:center;gap:12px;
+  transform:translateY(20px);opacity:0;transition:all 0.3s;
+  max-width:340px;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-icon{font-size:18px;}
+.toast-msg{font-size:14px;}
+
+/* ── PAGE ANIMATIONS ── */
+.fade-up{animation:fadeUp 0.5s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.delay-1{animation-delay:0.05s;}
+.delay-2{animation-delay:0.1s;}
+.delay-3{animation-delay:0.15s;}
+.delay-4{animation-delay:0.2s;}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:8px;}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease;}
+
+/* ── MOBILE MENU TOGGLE ── */
+.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);}
+@media(max-width:900px){
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .menu-toggle{display:flex;align-items:center;justify-content:center;}
+  .metrics-row{grid-template-columns:repeat(2,1fr);}
+  .dash-grid{grid-template-columns:1fr;}
+  .bikes-grid{grid-template-columns:1fr 1fr;}
+  .ar-stats{grid-template-columns:1fr 1fr;}
+  .profile-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><span>🚲</span></div>
+    Kuet<span class="green">Track</span>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-card">
+      <div class="user-avatar" id="sidebarAvatar">RH</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarName">Loading...</div>
+        <div class="user-plan"><span class="plan-badge plan-basic" id="planBadge">Basic</span></div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <button class="nav-item active" onclick="showPage('dashboard',this)">
+      <span class="nav-icon">🏠</span> Dashboard
+    </button>
+    <button class="nav-item" onclick="showPage('find',this)">
+      <span class="nav-icon">🗺️</span> Find a Bike
+    </button>
+    <button class="nav-item" onclick="showPage('myride',this)">
+      <span class="nav-icon">🚴</span> My Ride <span class="nav-badge" id="rideBadge" style="display:none;">Live</span>
+    </button>
+    <button class="nav-item" onclick="showPage('gps',this);startGpsPoll()">
+      <span class="nav-icon">📡</span> Live GPS
+      <span class="nav-badge" id="gpsBadge" style="display:none;background:rgba(0,136,255,0.18);color:var(--accent2);">Live</span>
+    </button>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <button class="nav-item" onclick="showPage('history',this)">
+      <span class="nav-icon">📋</span> Ride History
+    </button>
+    <button class="nav-item" onclick="showPage('wallet',this)">
+      <span class="nav-icon">💳</span> Wallet
+    </button>
+    <button class="nav-item" onclick="showPage('profile',this)">
+      <span class="nav-icon">👤</span> Profile
+    </button>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="nav-item" onclick="logout()" style="color:var(--red);">
+      <span class="nav-icon">🚪</span> Logout
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <div class="wallet-chip" onclick="showPage('wallet',null)">
+        💳 &nbsp;<span class="w-bal" id="topbarBalance">৳0</span>
+      </div>
+      <div class="icon-btn" onclick="toggleNotif()">
+        🔔<div class="notif-dot"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── PAGE: DASHBOARD ── -->
+  <div class="page active" id="page-dashboard">
+    <div class="metrics-row">
+      <div class="metric-card fade-up">
+        <div class="metric-label">Wallet Balance</div>
+        <div class="metric-val" id="metWallet" style="color:var(--accent);">৳0</div>
+        <div class="metric-sub">Available to spend</div>
+      </div>
+      <div class="metric-card fade-up delay-1">
+        <div class="metric-label">Total Rides</div>
+        <div class="metric-val" id="metRides">0</div>
+        <div class="metric-sub">All time</div>
+      </div>
+      <div class="metric-card fade-up delay-2">
+        <div class="metric-label">Distance Covered</div>
+        <div class="metric-val" id="metDist">0 km</div>
+        <div class="metric-sub">Total distance</div>
+      </div>
+      <div class="metric-card fade-up delay-3">
+        <div class="metric-label">CO₂ Saved</div>
+        <div class="metric-val" style="color:#4caf50;">0 kg</div>
+        <div class="metric-sub">vs. car travel</div>
+      </div>
+    </div>
+
+    <!-- Active Ride Banner -->
+    <div class="active-ride-panel" id="activeRidePanel">
+      <div class="ar-header">
+        <div class="ar-title"><div class="ar-live-dot"></div> Active Ride</div>
+        <button class="end-ride-btn" onclick="endRide()">End Ride</button>
+      </div>
+      <div class="ar-stats">
+        <div class="ar-stat"><div class="ar-val" id="arTimer">00:00</div><div class="ar-label">Duration</div></div>
+        <div class="ar-stat"><div class="ar-val" id="arDist">0.0</div><div class="ar-label">km</div></div>
+        <div class="ar-stat"><div class="ar-val" id="arBike">—</div><div class="ar-label">Bike ID</div></div>
+        <div class="ar-stat"><div class="ar-val" id="arFare">৳0</div><div class="ar-label">Est. Fare</div></div>
+      </div>
+    </div>
+
+    <div class="dash-grid fade-up delay-2">
+      <!-- LIVE LEAFLET MAP — powered by ESP32+NEO-6M hardware GPS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📍 Live Map — Bike &amp; Stations</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div id="dashGpsDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);transition:background 0.4s;"></div>
+            <span id="dashGpsLabel" style="font-size:12px;color:var(--text3);">GPS Offline</span>
+            <a class="card-action" style="margin-left:8px;" onclick="showPage('find',document.querySelector('[onclick*=find]'))">Full Map →</a>
+          </div>
+        </div>
+        <div style="padding:0;">
+          <div id="dashLeafMap" style="width:100%;height:320px;border-radius:0 0 14px 14px;"></div>
+        </div>
+      </div>
+      <!-- Nearby Stations — sorted dynamically by real GPS distance -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏪 Nearby Stations</div>
+          <span id="dashStationNote" style="font-size:11px;color:var(--text3);">By GPS distance</span>
+        </div>
+        <div class="card-body" style="padding:12px 16px;">
+          <div class="station-list" id="dashStationList">
+            <div style="padding:24px;text-align:center;color:var(--text3);font-size:13px;">⏳ Waiting for GPS…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Rides -->
+    <div class="card fade-up delay-3" style="margin-top:20px;">
+      <div class="card-header">
+        <div class="card-title">🕒 Recent Rides</div>
+        <a class="card-action" onclick="showPage('history',document.querySelector('[onclick*=history]'))">View All →</a>
+      </div>
+      <div class="card-body" style="padding:0 24px 20px;">
+        <table class="ride-table" id="recentRidesTable">
+          <thead>
+            <tr>
+              <th>Bike ID</th><th>From</th><th>Duration</th><th>Distance</th><th>Fare</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="recentRidesTbody">
+            <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3);">No rides yet. <a style="color:var(--accent);cursor:pointer;" onclick="showPage('find',document.querySelector('[onclick*=find]'))">Rent your first bike →</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: FIND A BIKE ── -->
+  <div class="page" id="page-find">
+    <!-- Full Leaflet Map — Live stations + user GPS from hardware -->
+    <div class="card fade-up" style="margin-bottom:24px;">
+      <div class="card-header">
+        <div class="card-title">🗺️ Live Bike Station Map</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);">
+          <div id="findGpsDot" style="width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background 0.4s;"></div>
+          <span id="findGpsLabel">Tap a station marker to filter bikes</span>
+        </div>
+      </div>
+      <div style="padding:0;">
+        <div id="findLeafMap" style="width:100%;height:300px;border-radius:0 0 14px 14px;"></div>
+      </div>
+    </div>
+
+    <!-- Bike Grid -->
+    <div class="card-header" style="padding:0 0 16px;">
+      <div class="card-title">🚲 Available Bikes</div>
+      <div style="display:flex;gap:8px;">
+        <select onchange="filterBikes(this.value)" style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);font-size:13px;outline:none;">
+          <option value="all">All Stations</option>
+          <option value="Central">Central Station</option>
+          <option value="KU">KU Campus</option>
+          <option value="East">East Hub</option>
+          <option value="North">North Gate</option>
+        </select>
+      </div>
+    </div>
+    <div class="bikes-grid fade-up delay-1" id="bikesGrid">
+      <!-- Bikes rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ── PAGE: MY RIDE ── -->
+  <div class="page" id="page-myride">
+    <div id="noRideMsg" class="fade-up" style="text-align:center;padding:80px 20px;">
+      <div style="font-size:64px;margin-bottom:20px;">🚴</div>
+      <div style="font-family:var(--ff);font-size:28px;font-weight:800;margin-bottom:12px;">No Active Ride</div>
+      <div style="color:var(--text2);margin-bottom:28px;">You don't have an active rental session right now.</div>
+      <button class="modal-btn" style="width:auto;padding:12px 32px;margin-top:0;" onclick="showPage('find',document.querySelector('[onclick*=find]'))">Find a Bike →</button>
+    </div>
+    <div id="rideTracker" style="display:none;">
+      <div class="active-ride-panel show fade-up" style="margin-bottom:24px;">
+        <div class="ar-header">
+          <div class="ar-title"><div class="ar-live-dot"></div> Live Tracking</div>
+          <button class="end-ride-btn" onclick="endRide()">🛑 End Ride</button>
+        </div>
+        <div class="ar-stats">
+          <div class="ar-stat"><div class="ar-val" id="arTimer2">00:00</div><div class="ar-label">Duration</div></div>
+          <div class="ar-stat"><div class="ar-val" id="arDist2">0.0</div><div class="ar-label">km</div></div>
+          <div class="ar-stat"><div class="ar-val" id="arBike2">—</div><div class="ar-label">Bike ID</div></div>
+          <div class="ar-stat"><div class="ar-val" id="arFare2">৳0</div><div class="ar-label">Est. Fare</div></div>
+        </div>
+      </div>
+      <div class="dash-grid fade-up delay-1">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📡 Live GPS Tracking</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+              <div id="rideGpsDot" style="width:7px;height:7px;border-radius:50%;background:var(--text3);animation:pulse 2s infinite;"></div>
+              <span id="rideGpsLabel" style="color:var(--accent);">● Live via ESP32</span>
+            </div>
+          </div>
+          <div style="padding:0;">
+            <div id="rideLeafMap" style="width:100%;height:300px;border-radius:0 0 14px 14px;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📊 Ride Stats</div></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;">
+                  <span style="color:var(--text2);">Speed</span>
+                  <span id="rideSpeed">0 km/h</span>
+                </div>
+                <div class="prog-bar"><div class="prog-fill" id="speedBar" style="width:0%;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;">
+                  <span style="color:var(--text2);">Battery</span>
+                  <span id="rideBattery">85%</span>
+                </div>
+                <div class="prog-bar"><div class="prog-fill" id="batteryBar" style="width:85%;background:linear-gradient(90deg,#4caf50,#81c784);"></div></div>
+              </div>
+              <div style="background:var(--surface);border-radius:var(--r-sm);padding:16px;">
+                <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Started from</div>
+                <div style="font-size:14px;font-weight:500;" id="startStation">—</div>
+              </div>
+              <div style="background:var(--surface);border-radius:var(--r-sm);padding:16px;">
+                <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Nearest return station</div>
+                <div style="font-size:14px;font-weight:500;color:var(--accent);" id="nearestStationLabel">Calculating…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: GPS TRACKING ── -->
+  <div class="page" id="page-gps">
+
+    <!-- Status strip -->
+    <div class="metrics-row" style="margin-bottom:20px;">
+      <div class="metric-card fade-up">
+        <div class="metric-label">GPS Module</div>
+        <div class="metric-val" id="gpsModuleStatus" style="font-size:16px;color:var(--text3);">Offline</div>
+        <div class="metric-sub" id="gpsModuleSub">Waiting for ESP32 #2</div>
+      </div>
+      <div class="metric-card fade-up delay-1">
+        <div class="metric-label">Latitude</div>
+        <div class="metric-val" id="gpsLat" style="font-size:16px;color:var(--accent);">—</div>
+        <div class="metric-sub">degrees</div>
+      </div>
+      <div class="metric-card fade-up delay-2">
+        <div class="metric-label">Longitude</div>
+        <div class="metric-val" id="gpsLon" style="font-size:16px;color:var(--accent2);">—</div>
+        <div class="metric-sub">degrees</div>
+      </div>
+      <div class="metric-card fade-up delay-3">
+        <div class="metric-label">Satellites</div>
+        <div class="metric-val" id="gpsSats" style="font-size:16px;">—</div>
+        <div class="metric-sub" id="gpsLastSeen">No data yet</div>
+      </div>
+    </div>
+
+    <!-- Live Map -->
+    <div class="card fade-up delay-1" style="margin-bottom:20px;">
+      <div class="card-header">
+        <div class="card-title">📡 Live Vehicle Location</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:13px;">
+            <div id="gpsOnlineDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);transition:background 0.4s;"></div>
+            <span id="gpsOnlineLabel" style="color:var(--text3);">ESP32 Offline</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <!-- Google Map renders here -->
+        <div id="gpsMapDiv" style="width:100%;height:400px;border-radius:0 0 14px 14px;"></div>
+        <!-- Shown when no GPS yet -->
+        <div id="gpsMapWaiting" style="width:100%;height:400px;border-radius:0 0 14px 14px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+          <div style="font-size:48px;">📡</div>
+          <div style="font-size:15px;font-weight:600;">Waiting for GPS data from ESP32 (GPS+WiFi)…</div>
+          <div style="font-size:13px;color:var(--text3);">Make sure the ESP32 is powered, WiFi connected, and NEO-6M has satellite fix</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trail table -->
+    <div class="card fade-up delay-2">
+      <div class="card-header">
+        <div class="card-title">🗺️ GPS Trail</div>
+        <div id="gpsTrailCount" style="font-size:13px;color:var(--text3);">0 points</div>
+      </div>
+      <div class="card-body" style="padding:0 24px 20px;max-height:220px;overflow-y:auto;">
+        <table class="ride-table">
+          <thead><tr><th>#</th><th>Latitude</th><th>Longitude</th><th>Satellites</th><th>Time</th></tr></thead>
+          <tbody id="gpsTrailBody">
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);">No trail data yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: HISTORY ── -->
+  <div class="page" id="page-history">
+    <div class="card fade-up">
+      <div class="card-header">
+        <div class="card-title">📋 Ride History</div>
+        <div style="font-size:13px;color:var(--text3);" id="rideCount">0 total rides</div>
+      </div>
+      <div class="card-body" style="padding:0 24px 20px;">
+        <table class="ride-table">
+          <thead>
+            <tr><th>Date</th><th>Bike ID</th><th>From</th><th>Duration</th><th>Distance</th><th>Fare</th><th>Status</th></tr>
+          </thead>
+          <tbody id="historyTbody">
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3);">No ride history yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: WALLET ── -->
+  <div class="page" id="page-wallet">
+    <div class="wallet-hero fade-up">
+      <div class="wallet-bal-label">Available Balance</div>
+      <div class="wallet-balance"><span class="wallet-currency">৳</span><span id="walletBal">0</span></div>
+      <div style="font-size:13px;color:var(--text3);margin-top:8px;" id="walletPlan">Basic Plan</div>
+      <div class="wallet-actions">
+        <button class="w-btn w-btn-primary" onclick="openTopupModal()">⬆ Top Up</button>
+        <button class="w-btn w-btn-sec" onclick="showPage('history',document.querySelector('[onclick*=history]'))">View Rides</button>
+      </div>
+    </div>
+    <div class="dash-grid fade-up delay-1">
+      <div class="card">
+        <div class="card-header"><div class="card-title">💸 Transactions</div></div>
+        <div class="card-body">
+          <div class="txn-list" id="txnList">
+            <div style="text-align:center;padding:28px;color:var(--text3);">No transactions yet.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚡ Quick Top-Up</div></div>
+        <div class="card-body">
+          <div class="topup-grid" id="topupGrid">
+            <div class="topup-option" onclick="selectTopup(50,this)"><div class="topup-amount">৳50</div><div class="topup-label">Starter</div></div>
+            <div class="topup-option" onclick="selectTopup(100,this)"><div class="topup-amount">৳100</div><div class="topup-label">Basic</div></div>
+            <div class="topup-option" onclick="selectTopup(200,this)"><div class="topup-amount">৳200</div><div class="topup-label">Popular</div></div>
+            <div class="topup-option" onclick="selectTopup(500,this)"><div class="topup-amount">৳500</div><div class="topup-label">Best Value</div></div>
+          </div>
+          <button class="modal-btn" id="topupConfirmBtn" style="display:none;" onclick="confirmTopup()">Confirm Top-Up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: PROFILE ── -->
+  <div class="page" id="page-profile">
+    <div class="card fade-up" style="margin-bottom:20px;">
+      <div class="card-header"><div class="card-title">🪪 RFID Card Status</div></div>
+      <div class="card-body">
+        <div class="rfid-info" id="rfidInfo">
+          <div class="rfid-status-icon">💳</div>
+          <div class="rfid-text">
+            <h4>No RFID Card Linked</h4>
+            <p>Visit a KuetTrack kiosk or contact admin to link your RFID card.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="profile-grid fade-up delay-1">
+      <div class="card">
+        <div class="card-header"><div class="card-title">👤 Personal Info</div></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" id="pfFirstName" type="text" placeholder="First name"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" id="pfLastName" type="text" placeholder="Last name"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="pfEmail" type="email" disabled/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-input" id="pfPhone" type="text" placeholder="Phone number"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">City</label>
+            <input class="form-input" id="pfCity" type="text" placeholder="City"/>
+          </div>
+          <button class="modal-btn" onclick="saveProfile()">Save Changes</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📦 Plan & Stats</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="background:var(--surface);border-radius:var(--r-sm);padding:16px;">
+              <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Current Plan</div>
+              <div style="font-size:18px;font-family:var(--ff);font-weight:700;" id="pfPlan">Basic</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:4px;">Pay-per-ride billing</div>
+            </div>
+            <div style="background:var(--surface);border-radius:var(--r-sm);padding:16px;">
+              <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Member Since</div>
+              <div style="font-size:15px;font-weight:500;" id="pfSince">—</div>
+            </div>
+            <div style="background:var(--surface);border-radius:var(--r-sm);padding:16px;">
+              <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Wallet Balance</div>
+              <div style="font-size:22px;font-family:var(--ff);font-weight:800;color:var(--accent);" id="pfBalance">৳0</div>
+            </div>
+            <button class="modal-btn" style="background:rgba(0,136,255,0.12);color:var(--accent2);border:1px solid rgba(0,136,255,0.2);" onclick="showToast('📞 Contact admin to upgrade your plan.')">Upgrade Plan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- NOTIFICATION DRAWER -->
+<div class="notif-drawer" id="notifDrawer">
+  <div class="notif-drawer-header">
+    <div class="notif-drawer-title">🔔 Notifications</div>
+    <button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;" onclick="toggleNotif()">✕</button>
+  </div>
+  <div class="notif-list">
+    <div class="notif-item">
+      <div class="notif-item-title">🎉 Welcome to KuetTrack!</div>
+      <div class="notif-item-time">Just now</div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-item-title">💳 RFID card assignment pending — visit a kiosk to link your card.</div>
+      <div class="notif-item-time">System</div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-item-title">🚲 12 bikes available at Central Station near you.</div>
+      <div class="notif-item-time">Today</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM RIDE MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Confirm Rental</div>
+      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    </div>
+    <div class="confirm-bike-display">
+      <div style="font-size:40px;margin-bottom:8px;">🚲</div>
+      <div class="confirm-bike-id" id="confirmBikeId">VT-001</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px;" id="confirmStation">Central Station</div>
+    </div>
+    <div class="confirm-rows">
+      <div class="confirm-row"><span>Bike Type</span><span>City Cruiser</span></div>
+      <div class="confirm-row"><span>Rate</span><span>৳2 / minute</span></div>
+      <div class="confirm-row"><span>Your Balance</span><span id="confirmBalance">৳0</span></div>
+      <div class="confirm-row"><span>Minimum Balance</span><span>৳20</span></div>
+    </div>
+    <div id="balanceWarning" style="background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);display:none;margin-bottom:12px;">
+      ⚠️ Insufficient balance. Please top up your wallet first.
+    </div>
+    <button class="modal-btn" id="confirmRideBtn" onclick="startRide()">🚴 Start Ride</button>
+  </div>
+</div>
+
+<!-- TOP UP MODAL -->
+<div class="modal-overlay" id="topupModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💳 Top Up Wallet</div>
+      <button class="modal-close" onclick="closeModal('topupModal')">✕</button>
+    </div>
+    <div class="topup-grid" id="modalTopupGrid">
+      <div class="topup-option" onclick="selectModalTopup(50,this)"><div class="topup-amount">৳50</div><div class="topup-label">Starter</div></div>
+      <div class="topup-option" onclick="selectModalTopup(100,this)"><div class="topup-amount">৳100</div><div class="topup-label">Basic</div></div>
+      <div class="topup-option" onclick="selectModalTopup(200,this)"><div class="topup-amount">৳200</div><div class="topup-label">Popular</div></div>
+      <div class="topup-option" onclick="selectModalTopup(500,this)"><div class="topup-amount">৳500</div><div class="topup-label">Best Value</div></div>
+    </div>
+    <button class="modal-btn" id="modalTopupBtn" style="opacity:0.4;" disabled onclick="doTopup()">Select an amount</button>
+  </div>
+</div>
+
+<!-- PAYMENT ERROR MODAL -->
+<div class="modal-overlay" id="paymentErrorModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title" id="payErrTitle">Payment Error</div>
+      <button class="modal-close" onclick="closeModal('paymentErrorModal')">✕</button>
+    </div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.8;" id="payErrDetail"></div>
+    <div style="margin-top:22px;display:flex;gap:10px;justify-content:flex-end;">
+      <button class="modal-btn" style="background:var(--surface2);color:var(--text2);" onclick="closeModal('paymentErrorModal')">Close</button>
+      <button class="modal-btn" style="background:rgba(0,229,160,0.12);color:var(--accent);" onclick="closeModal('paymentErrorModal');initiateStripeTopup(selectedTopupAmount||modalTopupAmt||100)">Retry</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✅</span>
+  <span class="toast-msg" id="toastMsg"></span>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+const API = window.location.origin.includes('5000') ? 'http://localhost:5000' : 'http://localhost:5000'; // backend always on 5000
+let currentUser = null;
+let rideState = null; // { bikeId, station, startTime, timerInterval }
+let rideHistory = [];
+let transactions = [];
+
+// Demo bikes data
+const BIKES = [
+  {id:'VT-001',station:'Central',type:'City Cruiser',battery:92,distance:4.2,status:'available'},
+  {id:'VT-007',station:'Central',type:'City Cruiser',battery:78,distance:12.1,status:'available'},
+  {id:'VT-012',station:'KU',type:'Mountain Bike',battery:55,distance:8.7,status:'available'},
+  {id:'VT-018',station:'KU',type:'City Cruiser',battery:88,distance:3.3,status:'available'},
+  {id:'VT-023',station:'North',type:'City Cruiser',battery:95,distance:1.1,status:'available'},
+  {id:'VT-031',station:'East',type:'City Cruiser',battery:40,distance:19.4,status:'available'},
+  {id:'VT-042',station:'North',type:'Mountain Bike',battery:67,distance:6.8,status:'available'},
+  {id:'VT-055',station:'East',type:'City Cruiser',battery:22,distance:28.5,status:'maintenance'},
+];
+
+// ─── INIT ─────────────────────────────────────────────
+window.onload = async () => {
+  // ── Payment-Return Token (prt) guard ─────────────────────────────────────
+  // When Stripe redirects back, the success_url contains a short-lived JWT
+  // (?prt=...) that identifies the user who actually made the payment.
+  // We restore their session from the server BEFORE reading localStorage,
+  // so the correct user is always shown regardless of who was logged in before.
+  const urlParams = new URLSearchParams(window.location.search);
+  const prt = urlParams.get('prt');
+  if (prt) {
+    try {
+      const prtRes = await fetch(`${API}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${prt}` }
+      });
+      if (prtRes.ok) {
+        const freshUser = await prtRes.json();
+        // Overwrite localStorage with the payment owner's session
+        localStorage.setItem('kuettrack_token', prt);
+        localStorage.setItem('kuettrack_user', JSON.stringify(freshUser));
+        console.log(`✅ Payment return: session restored for ${freshUser.firstName} ${freshUser.lastName}`);
+      }
+    } catch(e) {
+      console.warn('Could not restore session from payment return token:', e);
+    }
+    // Remove prt from URL immediately so it can't be reused via browser history
+    urlParams.delete('prt');
+    const cleanSearch = urlParams.toString();
+    window.history.replaceState({}, '', window.location.pathname + (cleanSearch ? '?' + cleanSearch : ''));
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const token = localStorage.getItem('kuettrack_token');
+  const stored = localStorage.getItem('kuettrack_user');
+  if (!token || !stored) { window.location.href = 'login_rfid.html'; return; }
+  currentUser = JSON.parse(stored);
+  populateUI(currentUser);
+  renderBikes('all');
+  // Init dashboard home map at KUET default (GPS will pan it live)
+  initDashMap(22.8997, 89.5010);
+  // Load real station data from server
+  await fetchAllStations();
+  renderNearbyStations(null, null);
+  // Start GPS polling immediately (updates all maps as data arrives)
+  startGpsPoll();
+
+  // Fetch transactions from backend
+  try {
+    const txnRes = await fetch(`${API}/api/transactions`, { headers: { Authorization: `Bearer ${token}` } });
+    if (txnRes.ok) { transactions = await txnRes.json(); renderTransactions(); }
+  } catch(e) {}
+
+  // Fetch ride history from backend
+  try {
+    const hRes = await fetch(`${API}/api/rides/user/${currentUser.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (hRes.ok) {
+      const rides = await hRes.json();
+      rideHistory = rides.map(r => ({
+        date:     new Date(r.startTime).toLocaleDateString('en-GB'),
+        bike:     '#' + (r.bikeId || 'BIKE-001'),
+        from:     r.stationStart || '—',
+        duration: r.duration || '—',
+        distance: (r.distanceKm || 0) + ' km',
+        fare:     '৳' + (r.fare || 0),
+        status:   r.status === 'completed' ? 'completed' : r.status
+      }));
+      renderHistory();
+      document.getElementById('metRides').textContent = rideHistory.length;
+      const totalDist = rides.reduce((a, r) => a + (r.distanceKm || 0), 0);
+      document.getElementById('metDist').textContent = totalDist.toFixed(1) + ' km';
+    }
+  } catch(e) {}
+  
+  try {
+    const res = await fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) { const fresh = await res.json(); currentUser = { ...currentUser, ...fresh }; localStorage.setItem('kuettrack_user', JSON.stringify(currentUser)); populateUI(currentUser); }
+  } catch(e) { /* offline — use stored */ }
+
+  // Check if there is an active ride on the server (e.g. after page refresh)
+  try {
+    const arRes = await fetch(`${API}/api/rides/active`, { headers: { Authorization: `Bearer ${token}` } });
+    if (arRes.ok) {
+      const ar = await arRes.json();
+      if (ar.active && !rideState) {
+        rideState = {
+          bikeId:    ar.bikeId || 'BIKE-001',
+          station:   ar.stationStart || 'Station',
+          rideId:    ar.rideId || '',
+          startTime: new Date(ar.startTime).getTime(),
+          elapsed:   Math.floor((Date.now() - new Date(ar.startTime).getTime()) / 1000),
+          dist:      0
+        };
+        document.getElementById('activeRidePanel').classList.add('show');
+        document.getElementById('arBike').textContent  = '#' + rideState.bikeId;
+        document.getElementById('arBike2').textContent = '#' + rideState.bikeId;
+        document.getElementById('startStation').textContent = rideState.station + ' Station';
+        document.getElementById('rideBadge').style.display = '';
+        updateRideUI();
+        rideState.timerInterval = setInterval(tickRide, 1000);
+        startRideStatusPoll();
+      }
+    }
+  } catch(e) { /* ignore */ }
+
+  checkStripeReturn();
+};
+
+function populateUI(u) {
+  const initials = ((u.firstName||'?')[0]+(u.lastName||'?')[0]).toUpperCase();
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent = `${u.firstName} ${u.lastName}`;
+  const pb = document.getElementById('planBadge');
+  pb.textContent = (u.plan||'basic').charAt(0).toUpperCase()+(u.plan||'basic').slice(1);
+  pb.className = `plan-badge plan-${u.plan||'basic'}`;
+  const bal = u.walletBalance||0;
+  document.getElementById('topbarBalance').textContent = `৳${bal}`;
+  document.getElementById('metWallet').textContent = `৳${bal}`;
+  document.getElementById('walletBal').textContent = bal;
+  document.getElementById('pfBalance').textContent = `৳${bal}`;
+  document.getElementById('pfPlan').textContent = (u.plan||'basic').charAt(0).toUpperCase()+(u.plan||'basic').slice(1);
+  document.getElementById('walletPlan').textContent = pb.textContent + ' Plan';
+  document.getElementById('pfFirstName').value = u.firstName||'';
+  document.getElementById('pfLastName').value = u.lastName||'';
+  document.getElementById('pfEmail').value = u.email||'';
+  document.getElementById('pfPhone').value = u.phone||'';
+  document.getElementById('pfCity').value = u.city||'';
+  if(u.createdAt) document.getElementById('pfSince').textContent = new Date(u.createdAt).toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'});
+  if(u.rfidUid) {
+    document.getElementById('rfidInfo').innerHTML = `<div class="rfid-status-icon">✅</div><div class="rfid-text"><h4>RFID Card Linked</h4><p>Your card is active and ready to use at any bike dock.</p></div><div class="rfid-uid">${u.rfidUid}</div>`;
+  }
+}
+
+// ─── NAVIGATION ──────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const titles = {dashboard:'Dashboard',find:'Find a Bike',myride:'My Ride',gps:'Live GPS Tracking',history:'Ride History',wallet:'Wallet',profile:'Profile'};
+  document.getElementById('topbarTitle').textContent = titles[id]||id;
+  if(id==='myride') updateRideUI();
+  // Leaflet maps need invalidateSize() when their container becomes visible
+  setTimeout(() => {
+    if (id==='dashboard' && dashLeafMap) dashLeafMap.invalidateSize();
+    if (id==='find') {
+      if (!findMapInited) initFindMap(globalGpsPoint?.latitude, globalGpsPoint?.longitude);
+      if (findLeafMap) findLeafMap.invalidateSize();
+    }
+    if (id==='myride') {
+      if (!rideMapInited && globalGpsPoint) initRideMap(globalGpsPoint.latitude, globalGpsPoint.longitude);
+      else if (!rideMapInited) initRideMap(22.8997, 89.5010);
+      if (rideLeafMap) rideLeafMap.invalidateSize();
+    }
+    if (id==='gps' && gpsLeafMap) gpsLeafMap.invalidateSize();
+  }, 60);
+  window.scrollTo(0,0);
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ─── BIKE RENDERING ──────────────────────────────────
+function renderBikes(filter) {
+  const grid = document.getElementById('bikesGrid');
+  const bikes = filter==='all' ? BIKES : BIKES.filter(b=>b.station===filter);
+  if(!bikes.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3);">No bikes at this station.</div>';return;}
+  grid.innerHTML = bikes.map(b=>`
+    <div class="bike-card ${b.status!=='available'?'':''}">
+      <div class="bike-header">
+        <div class="bike-id">#${b.id}</div>
+        <span class="bike-status-badge ${b.status==='available'?'bs-available':b.status==='busy'?'bs-busy':'bs-maintenance'}">${b.status.charAt(0).toUpperCase()+b.status.slice(1)}</span>
+      </div>
+      <div class="bike-icon">🚲</div>
+      <div class="bike-stats">
+        <div class="bstat"><div class="bstat-val" style="color:${b.battery>50?'var(--accent)':b.battery>20?'var(--amber)':'var(--red)'}">${b.battery}%</div><div class="bstat-label">Battery</div></div>
+        <div class="bstat"><div class="bstat-val">${b.distance} km</div><div class="bstat-label">Total dist.</div></div>
+        <div class="bstat"><div class="bstat-val">${b.station}</div><div class="bstat-label">Station</div></div>
+        <div class="bstat"><div class="bstat-val">${b.type==='City Cruiser'?'🏙️':'⛰️'}</div><div class="bstat-label">${b.type}</div></div>
+      </div>
+      ${b.status==='available'
+        ? `<button class="bike-select-btn" onclick="openConfirm('${b.id}','${b.station}')">Select Bike →</button>`
+        : `<button class="bike-select-btn" disabled>${b.status==='busy'?'In Use':'Under Maintenance'}</button>`}
+    </div>
+  `).join('');
+}
+
+function filterBikes(val){renderBikes(val==='all'?'all':val);}
+function filterStation(s){
+  const sel=document.querySelector('#page-find select');
+  if(sel)sel.value=s;
+  renderBikes(s);
+}
+
+// ─── CONFIRM / START RIDE ────────────────────────────
+let pendingBike = null;
+function openConfirm(bikeId, station) {
+  if(rideState){showToast('⚠️ You already have an active ride!','var(--amber)');return;}
+  pendingBike={bikeId,station};
+  document.getElementById('confirmBikeId').textContent = '#'+bikeId;
+  document.getElementById('confirmStation').textContent = station+' Station';
+  const bal = currentUser.walletBalance||0;
+  document.getElementById('confirmBalance').textContent = '৳'+bal;
+  const warn = document.getElementById('balanceWarning');
+  const btn = document.getElementById('confirmRideBtn');
+  if(bal<20){warn.style.display='block';btn.disabled=true;btn.style.opacity='0.4';}
+  else{warn.style.display='none';btn.disabled=false;btn.style.opacity='1';}
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+async function startRide() {
+  if(!pendingBike)return;
+
+  // Require RFID card to be linked
+  if(!currentUser.rfidUid) {
+    showToast('⚠️ No RFID card linked to your account. Please contact admin.');
+    closeModal('confirmModal');
+    return;
+  }
+
+  closeModal('confirmModal');
+
+  // Show temporary loading state
+  showToast('🔄 Sending unlock command to bike...');
+
+  try {
+    const token = localStorage.getItem('kuettrack_token');
+    const res = await fetch(`${API}/api/rides/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        rfidUid:   currentUser.rfidUid,
+        bikeId:    'BIKE-001',
+        stationId: 'STATION-001'
+      })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast('❌ ' + (data.message || 'Could not start ride.'));
+      return;
+    }
+
+    // Store rideId for end-ride call
+    const rideId = data.rideId || '';
+
+    rideState = {
+      bikeId:    pendingBike.bikeId,
+      station:   pendingBike.station,
+      rideId:    rideId,
+      startTime: Date.now(),
+      elapsed:   0,
+      dist:      0
+    };
+
+    document.getElementById('activeRidePanel').classList.add('show');
+    document.getElementById('arBike').textContent  = '#'+rideState.bikeId;
+    document.getElementById('arBike2').textContent = '#'+rideState.bikeId;
+    document.getElementById('startStation').textContent = rideState.station+' Station';
+    document.getElementById('rideBadge').style.display='';
+    updateRideUI();
+    rideState.timerInterval = setInterval(tickRide,1000);
+    startRideStatusPoll();
+    showToast('🚴 Ride started! Tap RFID card on bike to unlock, then enjoy your trip!');
+
+  } catch(err) {
+    console.error('startRide error:', err);
+    showToast('❌ Network error. Please try again.');
+  }
+}
+
+function tickRide() {
+  if(!rideState)return;
+  rideState.elapsed = Math.floor((Date.now()-rideState.startTime)/1000);
+  rideState.dist = parseFloat((rideState.elapsed*0.00278).toFixed(1));
+  const fare = Math.ceil(rideState.elapsed/60)*2;
+  const m=Math.floor(rideState.elapsed/60),s=rideState.elapsed%60;
+  const fmt=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  ['arTimer','arTimer2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fmt;});
+  ['arDist','arDist2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=rideState.dist;});
+  ['arFare','arFare2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='৳'+fare;});
+  const sp=document.getElementById('rideSpeed');if(sp)sp.textContent=Math.round(5+Math.random()*8)+' km/h';
+  const sb=document.getElementById('speedBar');if(sb)sb.style.width=Math.min((parseFloat(sp?.textContent||0))/30*100,100)+'%';
+  // GPS real position handled by pollGps() — no fake animation needed
+}
+
+async function endRide() {
+  if(!rideState)return;
+  clearInterval(rideState.timerInterval);
+
+  const elapsed = rideState.elapsed || 0;
+  const mins    = Math.floor(elapsed/60);
+  const secs    = elapsed%60;
+  const dist    = rideState.dist || 0;
+
+  showToast('🔄 Ending ride...');
+
+  try {
+    const token = localStorage.getItem('kuettrack_token');
+    const res = await fetch(`${API}/api/rides/end`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        rfidUid:   currentUser.rfidUid || '',
+        rideId:    rideState.rideId    || '',
+        stationId: 'STATION-001'
+      })
+    });
+    const data = await res.json();
+
+    let fare = data.fare || Math.max(Math.ceil(elapsed/60)*2, 2);
+    let newBalance = data.newBalance;
+
+    // Update local user balance from server response
+    if (newBalance !== undefined) {
+      currentUser.walletBalance = newBalance;
+      localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+    } else {
+      // Fallback: deduct locally
+      currentUser.walletBalance = Math.max((currentUser.walletBalance||0) - fare, 0);
+      localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+    }
+
+    // Add to local history display
+    const entry = {
+      date:     new Date().toLocaleDateString('en-GB'),
+      bike:     '#'+rideState.bikeId,
+      from:     rideState.station,
+      duration: `${mins}m ${secs}s`,
+      distance: dist+' km',
+      fare:     '৳'+fare,
+      status:   'completed'
+    };
+    rideHistory.unshift(entry);
+    transactions.unshift({type:'debit',title:`Ride #${rideState.bikeId}`,date:new Date().toLocaleString(),amount:fare});
+    document.getElementById('metRides').textContent=rideHistory.length;
+    document.getElementById('metDist').textContent=rideHistory.reduce((a,r)=>a+parseFloat(r.distance),0).toFixed(1)+' km';
+    renderHistory(); renderTransactions();
+    populateUI(currentUser);
+
+    rideState=null;
+    document.getElementById('activeRidePanel').classList.remove('show');
+    document.getElementById('rideBadge').style.display='none';
+    updateRideUI();
+    stopRideStatusPoll();
+    await refreshRideHistory();
+    showToast(`✅ Ride ended! Fare ৳${fare} deducted. Tap RFID card to lock bike.`);
+
+  } catch(err) {
+    console.error('endRide error:', err);
+    // Gracefully end UI even if server call fails
+    rideState=null;
+    document.getElementById('activeRidePanel').classList.remove('show');
+    document.getElementById('rideBadge').style.display='none';
+    updateRideUI();
+    stopRideStatusPoll();
+    showToast('⚠️ Ride ended locally. Tap RFID card to lock bike.');
+  }
+}
+
+function updateRideUI(){
+  const tracking=document.getElementById('rideTracker');
+  const noRide=document.getElementById('noRideMsg');
+  if(rideState){tracking.style.display='';noRide.style.display='none';}
+  else{tracking.style.display='none';noRide.style.display='';}
+}
+
+// ─── HISTORY ─────────────────────────────────────────
+function renderHistory(){
+  const tbody=document.getElementById('historyTbody');
+  const recent=document.getElementById('recentRidesTbody');
+  document.getElementById('rideCount').textContent=rideHistory.length+' total ride'+(rideHistory.length!==1?'s':'');
+  if(!rideHistory.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3);">No rides yet.</td></tr>';
+    recent.innerHTML='<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3);">No rides yet. <a style="color:var(--accent);cursor:pointer;" onclick="showPage(\'find\',document.querySelector(\'[onclick*=find]\'))">Rent your first bike →</a></td></tr>';
+    return;
+  }
+  const row=r=>`<tr><td>${r.date}</td><td style="font-family:var(--ff);font-weight:700;color:var(--accent);">${r.bike}</td><td>${r.from}</td><td>${r.duration}</td><td>${r.distance}</td><td style="font-weight:600;">${r.fare}</td><td><span class="ride-status bs-available">${r.status}</span></td></tr>`;
+  tbody.innerHTML=rideHistory.map(row).join('');
+  recent.innerHTML=rideHistory.slice(0,4).map(r=>`<tr><td>${r.bike}</td><td>${r.from}</td><td>${r.duration}</td><td>${r.distance}</td><td style="font-weight:600;">${r.fare}</td><td><span class="ride-status bs-available">${r.status}</span></td></tr>`).join('');
+}
+
+// ─── TRANSACTIONS ─────────────────────────────────────
+function renderTransactions(){
+  const list=document.getElementById('txnList');
+  if(!transactions.length){list.innerHTML='<div style="text-align:center;padding:28px;color:var(--text3);">No transactions yet.</div>';return;}
+  list.innerHTML=transactions.map(t=>{
+    const date = t.date ? t.date : (t.timestamp ? new Date(t.timestamp).toLocaleString() : 'Unknown');
+    return `
+    <div class="txn-item">
+      <div class="txn-icon ${t.type==='credit'?'txn-credit':'txn-debit'}">${t.type==='credit'?'⬆':'⬇'}</div>
+      <div class="txn-info"><div class="txn-title">${t.title}</div><div class="txn-date">${date}</div></div>
+      <div class="txn-amount ${t.type==='credit'?'txn-plus':'txn-minus'}">${t.type==='credit'?'+':'-'}৳${t.amount}</div>
+    </div>
+  `}).join('');
+}
+
+// ─── TRANSACTION UTILS ────────────────────────────────
+async function saveTransaction(type, title, amount, description = '', reference = '') {
+  const token = localStorage.getItem('kuettrack_token');
+  console.log(`🔄 Saving transaction: type=${type} title=${title} amount=৳${amount}`);
+  try {
+    const body = { type, title, amount, description, newBalance: currentUser.walletBalance, reference };
+    console.log('Request body:', body);
+    
+    const res = await fetch(`${API}/api/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    
+    console.log(`Response status: ${res.status}, ok: ${res.ok}`);
+    
+    if (res.ok) {
+      const txn = await res.json();
+      console.log(`✅ Transaction saved to backend:`, txn);
+      return txn;
+    } else {
+      const err = await res.json();
+      console.error('❌ Failed to save transaction:', res.status, err);
+    }
+  } catch (e) {
+    console.error('💥 Error saving transaction:', e);
+  }
+}
+
+// ─── WALLET / TOP-UP (Stripe) ────────────────────────
+let modalTopupAmt = 0;
+let selectedTopupAmount = 0;
+
+function openTopupModal() { document.getElementById('topupModal').classList.add('show'); }
+
+function selectTopup(amt, el) {
+  selectedTopupAmount = amt;
+  document.querySelectorAll('#topupGrid .topup-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('topupConfirmBtn');
+  btn.style.display = '';
+  btn.textContent = `Pay ৳${amt} via Stripe`;
+}
+
+function confirmTopup() {
+  if (!selectedTopupAmount) return;
+  initiateStripeTopup(selectedTopupAmount);
+  document.querySelectorAll('#topupGrid .topup-option').forEach(o => o.classList.remove('selected'));
+  document.getElementById('topupConfirmBtn').style.display = 'none';
+  selectedTopupAmount = 0;
+}
+
+function selectModalTopup(amt, el) {
+  modalTopupAmt = amt;
+  document.querySelectorAll('#modalTopupGrid .topup-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('modalTopupBtn');
+  btn.disabled = false; btn.style.opacity = '1';
+  btn.textContent = `Pay ৳${amt} via Stripe`;
+}
+
+function doTopup() {
+  if (!modalTopupAmt) return;
+  initiateStripeTopup(modalTopupAmt);
+  closeModal('topupModal');
+  modalTopupAmt = 0;
+  document.querySelectorAll('#modalTopupGrid .topup-option').forEach(o => o.classList.remove('selected'));
+  const btn = document.getElementById('modalTopupBtn');
+  btn.disabled = true; btn.style.opacity = '0.4'; btn.textContent = 'Select an amount';
+}
+
+async function initiateStripeTopup(amt) {
+  const token = localStorage.getItem('kuettrack_token');
+
+  // Step 1 — check server is reachable before attempting payment
+  try {
+    const ping = await fetch(`${API}/api/system/health`);
+    if (!ping.ok) throw new Error('unhealthy');
+  } catch (_) {
+    showPaymentError(
+      '🔌 Cannot reach backend server',
+      'Make sure <code>server.js</code> is running:<br><br>' +
+      '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:6px;">node server.js</code>'
+    );
+    return;
+  }
+
+  showToast('⏳ Connecting to Stripe...');
+  try {
+    const res = await fetch(`${API}/api/payment/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ amount: amt })
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('Server returned an unexpected response. Check server logs.');
+    }
+
+    const data = await res.json();
+
+    if (res.status === 503) {
+      showPaymentError(
+        '💳 Stripe not configured',
+        'Add your Stripe key to <code>.env</code>, then restart the server:<br><br>' +
+        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">STRIPE_SECRET_KEY=sk_test_...</code>' +
+        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">npm install stripe</code>'
+      );
+      return;
+    }
+
+    if (!res.ok) {
+      console.error('Payment creation failed:', { status: res.status, data });
+      throw new Error(data.message || `Server error: ${res.status}`);
+    }
+
+    if (!data.url) {
+      console.error('No payment URL in response:', data);
+      throw new Error('Payment session created but no redirect URL provided');
+    }
+
+    // All good — redirect to Stripe hosted checkout
+    window.location.href = data.url;
+
+  } catch (e) {
+    console.error('Stripe topup error:', e);
+    showPaymentError('❌ Payment Error', `${e.message}<br><br>Check browser console for details.`);
+  }
+}
+
+function showPaymentError(title, detail) {
+  document.getElementById('payErrTitle').textContent = title;
+  document.getElementById('payErrDetail').innerHTML = detail;
+  document.getElementById('paymentErrorModal').classList.add('show');
+}
+
+// Called on return from Stripe (success redirect lands with ?topup=success&amount=X&session_id=...)
+async function checkStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('topup') === 'success') {
+    const amt = parseInt(params.get('amount') || '0', 10);
+    const sessionId = params.get('session_id');
+    const token = localStorage.getItem('kuettrack_token');
+    
+    // Wait a moment for webhook to process
+    await new Promise(r => setTimeout(r, 1000));
+    
+    try {
+      // Verify payment and get updated balance from server
+      if (sessionId) {
+        const verifyRes = await fetch(`${API}/api/payment/verify-session/${sessionId}`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        if (verifyRes.ok) {
+          const verifyData = await verifyRes.json();
+          if (verifyData.paid) {
+            currentUser.walletBalance = verifyData.walletBalance;
+            localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+            console.log(`✅ Payment verified! Balance: ৳${currentUser.walletBalance}`);
+          }
+        }
+      }
+      
+      // Also fetch fresh user data to ensure we have latest
+      const res = await fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        currentUser.walletBalance = data.walletBalance;
+        localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+      }
+    } catch (e) {
+      console.error('Failed to fetch updated balance:', e);
+    }
+    
+    // Update UI
+    populateUI(currentUser);
+    
+    if (amt) {
+      const txn = { type: 'credit', title: 'Wallet Top-Up (Stripe)', date: new Date().toLocaleString(), amount: amt };
+      transactions.unshift(txn);
+      renderTransactions();
+      // Save to backend
+      await saveTransaction('credit', 'Wallet Top-Up (Stripe)', amt, `Payment verified from Stripe`, sessionId);
+      showToast(`✅ ৳${amt} added to your wallet!`);
+    }
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if (params.get('topup') === 'cancel') {
+    showToast('⚠️ Payment cancelled.');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+// ─── PROFILE SAVE ────────────────────────────────────
+function saveProfile(){
+  currentUser.firstName=document.getElementById('pfFirstName').value;
+  currentUser.lastName=document.getElementById('pfLastName').value;
+  currentUser.phone=document.getElementById('pfPhone').value;
+  currentUser.city=document.getElementById('pfCity').value;
+  localStorage.setItem('kuettrack_user',JSON.stringify(currentUser));
+  populateUI(currentUser);
+  showToast('✅ Profile updated successfully!');
+}
+
+// ─── LOGOUT ──────────────────────────────────────────
+function logout(){
+  if(rideState){showToast('⚠️ Please end your active ride before logging out.','var(--amber)');return;}
+  localStorage.removeItem('kuettrack_token');
+  localStorage.removeItem('kuettrack_user');
+  window.location.href='login_rfid.html';
+}
+
+// ─── MODALS ──────────────────────────────────────────
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
+
+// ─── NOTIFICATIONS ───────────────────────────────────
+function toggleNotif(){document.getElementById('notifDrawer').classList.toggle('open');}
+
+// ─── TOAST ───────────────────────────────────────────
+let toastTimer;
+function showToast(msg,color=''){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  if(color)t.style.borderColor=color;else t.style.borderColor='';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ─── MAP TOOLTIPS ────────────────────────────────────
+function setupMapTooltips(){
+  document.querySelectorAll('.map-station[data-tip]').forEach(s=>{
+    s.addEventListener('mouseenter',e=>{
+      let tip=document.createElement('div');
+      tip.className='map-tooltip';tip.textContent=s.dataset.tip;tip.id='maptip';
+      s.style.position='relative';s.appendChild(tip);
+    });
+    s.addEventListener('mouseleave',()=>{
+      const tip=document.getElementById('maptip');if(tip)tip.remove();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// HARDWARE GPS INTEGRATION — ESP32 + NEO-6M → Server → All Leaflet Maps
+// ESP32 POSTs { lat, lon, speed, satellites, altitude, deviceId } every 5s
+// Website polls /api/gps/user/:id every 4s and updates ALL maps at once
+// ═══════════════════════════════════════════════════════════════════════
+
+// ─── Station data (matches server STATION_DATA) ──────────────────────────
+// ─── Station data — seeded from /api/stations, updated by /api/stations/nearby ───
+let STATIONS = [
+  { id:'S1', name:'KUET Main Gate',   addr:'KU Engineering Road',   lat:22.89970, lon:89.50100, bikes:8,  status:'available' },
+  { id:'S2', name:'KUET Campus Hub',  addr:'Inside KUET Campus',    lat:22.90318, lon:89.50348, bikes:5,  status:'available' },
+  { id:'S3', name:'Boyra Market',     addr:'Boyra, Khulna',         lat:22.91520, lon:89.51430, bikes:3,  status:'few'       },
+  { id:'S4', name:'Fulbari Gate',     addr:'Fulbari Road, Khulna',  lat:22.88200, lon:89.49000, bikes:6,  status:'available' },
+  { id:'S5', name:'Khulna Rail Gate', addr:'Railway Station Area',  lat:22.84300, lon:89.54500, bikes:0,  status:'empty'     },
+];
+
+// Fetch fresh station list from server (run once on load)
+async function fetchAllStations() {
+  try {
+    const res = await fetch(`${API}/api/stations`);
+    if (!res.ok) return;
+    const data = await res.json();
+    // Map server fields to frontend shape
+    STATIONS = data.map(s => ({
+      id: s.id, name: s.name, addr: s.address,
+      lat: s.lat, lon: s.lon,
+      bikes: s.availableBikes,
+      status: s.status
+    }));
+    // Re-add station markers to all already-initialised maps
+    // (maps not yet open will pick up STATIONS when they init)
+    [dashLeafMap, findLeafMap, rideLeafMap, gpsLeafMap].forEach(m => {
+      if (m) { m.eachLayer(l => { if (l._stationMarker) m.removeLayer(l); }); addStationsToMap(m); }
+    });
+  } catch(e) {
+    console.warn('Could not load stations from server, using defaults.', e);
+  }
+}
+
+// Fetch stations sorted by GPS distance from server and re-render list
+async function fetchNearbyStations(lat, lon) {
+  try {
+    const res = await fetch(`${API}/api/stations/nearby?lat=${lat}&lon=${lon}`);
+    if (!res.ok) { renderNearbyStations(lat, lon); return; }
+    const data = await res.json();
+    const list = document.getElementById('dashStationList');
+    if (!list) return;
+    document.getElementById('dashStationNote').textContent = 'By real GPS distance';
+    list.innerHTML = data.map(s => {
+      const c = s.status==='available'?'var(--accent)':s.status==='few'?'var(--amber)':'var(--text3)';
+      const dist = s.distanceKm != null ? s.distanceKm.toFixed(2)+' km' : '—';
+      return `<div class="station-item" onclick="showPage('find',document.querySelector('[onclick*=find]'))">
+        <div class="station-dot" style="background:${c}"></div>
+        <div class="station-info">
+          <div class="station-name">${s.name}</div>
+          <div class="station-addr">${s.address||s.addr||''}</div>
+        </div>
+        <div class="station-meta">
+          <div class="station-bikes" style="color:${c}">${s.availableBikes ?? s.bikes ?? 0}</div>
+          <div class="station-dist">${dist}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    renderNearbyStations(lat, lon); // fallback to local calc
+  }
+}
+
+// ─── Haversine distance (km) ─────────────────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ─── Leaflet icon helpers ────────────────────────────────────────────────
+function bikeIcon(color='#00e5a0') {
+  return L.divIcon({ className:'', iconSize:[30,30], iconAnchor:[15,15],
+    html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};border:3px solid #06090f;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 12px ${color}88;">🚲</div>`
+  });
+}
+function stationIcon(status) {
+  const c = status==='available'?'#00e5a0':status==='few'?'#ffab00':'#5a6175';
+  return L.divIcon({ className:'', iconSize:[14,14], iconAnchor:[7,7],
+    html:`<div style="width:14px;height:14px;border-radius:50%;background:${c};border:2px solid #06090f;box-shadow:0 0 6px ${c}66;"></div>`
+  });
+}
+
+// ─── Map state ───────────────────────────────────────────────────────────
+let dashLeafMap=null, dashUserMarker=null, dashMapInited=false;
+let findLeafMap=null, findUserMarker=null, findMapInited=false;
+let rideLeafMap=null, rideUserMarker=null, rideMapInited=false;
+let gpsLeafMap=null,  gpsLeafMarker=null, gpsLeafLine=null, gpsLatLngs=[], gpsMapInited=false;
+let gpsPollTimer=null, globalGpsPoint=null;
+
+// ─── Shared: add station markers to any Leaflet map ─────────────────────
+function addStationsToMap(map, onClickFilter) {
+  STATIONS.forEach(s => {
+    const m = L.marker([s.lat, s.lon], { icon: stationIcon(s.status) }).addTo(map);
+    m._stationMarker = true;  // tag so we can remove/refresh later
+    const c = s.status==='available'?'#00e5a0':s.status==='few'?'#ffab00':'#5a6175';
+    m.bindPopup(`<b>${s.name}</b><br><span style="color:#888;">${s.addr||s.address||''}</span><br><b style="color:${c}">${s.bikes ?? s.availableBikes ?? 0} bikes</b>`);
+    if (onClickFilter) m.on('click', () => onClickFilter(s.name.split(' ')[0]));
+  });
+}
+
+// ─── DASHBOARD HOME MAP ──────────────────────────────────────────────────
+function initDashMap(lat, lon) {
+  if (dashMapInited) return;
+  dashLeafMap = L.map('dashLeafMap', { zoomControl:true, attributionControl:true }).setView([lat,lon], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19
+  }).addTo(dashLeafMap);
+  addStationsToMap(dashLeafMap);
+  dashUserMarker = L.marker([lat,lon], { icon: bikeIcon('#0088ff') }).addTo(dashLeafMap)
+    .bindPopup('<b>Your Bike</b><br>Live GPS via ESP32+NEO-6M');
+  dashMapInited = true;
+}
+function updateDashMap(lat, lon) {
+  if (!dashMapInited) { initDashMap(lat, lon); return; }
+  dashUserMarker.setLatLng([lat,lon]);
+  dashLeafMap.panTo([lat,lon]);
+}
+
+// ─── FIND A BIKE MAP ─────────────────────────────────────────────────────
+function initFindMap(lat, lon) {
+  if (findMapInited) return;
+  const c = lat ? [lat,lon] : [22.8997, 89.5010];
+  findLeafMap = L.map('findLeafMap', { zoomControl:true }).setView(c, 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19
+  }).addTo(findLeafMap);
+  addStationsToMap(findLeafMap, (name) => filterStation(name));
+  if (lat) {
+    findUserMarker = L.marker([lat,lon], { icon: bikeIcon('#0088ff') }).addTo(findLeafMap)
+      .bindPopup('<b>Your Location</b>');
+  }
+  findMapInited = true;
+}
+function updateFindMap(lat, lon) {
+  if (!findMapInited) { initFindMap(lat, lon); return; }
+  if (!findUserMarker) {
+    findUserMarker = L.marker([lat,lon], { icon: bikeIcon('#0088ff') }).addTo(findLeafMap).bindPopup('<b>Your Location</b>');
+  } else {
+    findUserMarker.setLatLng([lat,lon]);
+  }
+}
+
+// ─── MY RIDE MAP ─────────────────────────────────────────────────────────
+function initRideMap(lat, lon) {
+  if (rideMapInited) return;
+  rideLeafMap = L.map('rideLeafMap', { zoomControl:true }).setView([lat,lon], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19
+  }).addTo(rideLeafMap);
+  addStationsToMap(rideLeafMap);
+  rideUserMarker = L.marker([lat,lon], { icon: bikeIcon() }).addTo(rideLeafMap)
+    .bindPopup('<b>Your Bike — Live Ride</b>');
+  rideMapInited = true;
+}
+function updateRideMap(lat, lon) {
+  if (!rideMapInited) { initRideMap(lat, lon); return; }
+  rideUserMarker.setLatLng([lat,lon]);
+  rideLeafMap.panTo([lat,lon]);
+}
+
+// ─── GPS TRACKING PAGE MAP ───────────────────────────────────────────────
+function initGpsPageMap(lat, lon) {
+  document.getElementById('gpsMapWaiting').style.display = 'none';
+  document.getElementById('gpsMapDiv').style.display = 'block';
+  if (gpsMapInited) return;
+  gpsLeafMap = L.map('gpsMapDiv', { zoomControl:true }).setView([lat,lon], 17);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19
+  }).addTo(gpsLeafMap);
+  addStationsToMap(gpsLeafMap);
+  gpsLeafMarker = L.marker([lat,lon], { icon: bikeIcon() }).addTo(gpsLeafMap)
+    .bindPopup('<b>Your Bike</b><br>Real-time GPS via ESP32 + NEO-6M').openPopup();
+  gpsLeafLine = L.polyline([[lat,lon]], { color:'#0088ff', weight:3, opacity:0.85 }).addTo(gpsLeafMap);
+  gpsLatLngs = [[lat,lon]];
+  gpsMapInited = true;
+}
+function updateGpsPageMap(lat, lon) {
+  if (!gpsMapInited) { initGpsPageMap(lat, lon); return; }
+  gpsLeafMarker.setLatLng([lat,lon]);
+  gpsLeafMap.panTo([lat,lon]);
+  gpsLatLngs.push([lat,lon]);
+  gpsLeafLine.setLatLngs(gpsLatLngs);
+}
+
+// ─── Station list — sorted by real GPS distance ──────────────────────────
+function renderNearbyStations(userLat, userLon) {
+  const list = document.getElementById('dashStationList');
+  if (!list) return;
+  const sorted = STATIONS.map(s => ({
+    ...s, dist: (userLat != null) ? haversine(userLat, userLon, s.lat, s.lon) : null
+  })).sort((a,b) => (a.dist ?? 999) - (b.dist ?? 999));
+  list.innerHTML = sorted.map(s => {
+    const c = s.status==='available'?'var(--accent)':s.status==='few'?'var(--amber)':'var(--text3)';
+    const dStr = s.dist != null ? s.dist.toFixed(2)+' km' : '—';
+    return `<div class="station-item" onclick="showPage('find',document.querySelector('[onclick*=find]'))">
+      <div class="station-dot" style="background:${c}"></div>
+      <div class="station-info">
+        <div class="station-name">${s.name}</div>
+        <div class="station-addr">${s.addr}</div>
+      </div>
+      <div class="station-meta">
+        <div class="station-bikes" style="color:${c}">${s.bikes}</div>
+        <div class="station-dist">${dStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Nearest return station for My Ride page ────────────────────────────
+function updateNearestStation(lat, lon) {
+  const el = document.getElementById('nearestStationLabel');
+  if (!el) return;
+  const nearest = STATIONS.filter(s=>s.bikes>0)
+    .map(s=>({...s, dist:haversine(lat,lon,s.lat,s.lon)}))
+    .sort((a,b)=>a.dist-b.dist)[0];
+  if (nearest) el.textContent = `${nearest.name} — ${nearest.dist.toFixed(2)} km`;
+}
+
+// ─── GPS online/offline UI ───────────────────────────────────────────────
+function setGpsOnline(point) {
+  const lat = point.latitude, lon = point.longitude;
+  // Dash map dot
+  const d=document.getElementById('dashGpsDot'), l=document.getElementById('dashGpsLabel');
+  if(d){d.style.background='var(--accent)';d.style.boxShadow='0 0 6px var(--accent)';}
+  if(l){l.textContent='GPS Live';l.style.color='var(--accent)';}
+  // Find map dot
+  const fd=document.getElementById('findGpsDot'),fl=document.getElementById('findGpsLabel');
+  if(fd){fd.style.background='var(--accent)';fd.style.boxShadow='0 0 6px var(--accent)';}
+  if(fl){fl.textContent='Your location is live';fl.style.color='var(--accent)';}
+  // GPS page
+  const od=document.getElementById('gpsOnlineDot'),ol=document.getElementById('gpsOnlineLabel');
+  if(od){od.style.background='var(--accent)';od.style.boxShadow='0 0 6px var(--accent)';}
+  if(ol){ol.textContent='GPS Online';ol.style.color='var(--accent)';}
+  const gb=document.getElementById('gpsBadge'); if(gb)gb.style.display='';
+  const ms=document.getElementById('gpsModuleStatus');
+  if(ms){ms.textContent='🛰️ Live';ms.style.color='var(--accent)';}
+  const msub=document.getElementById('gpsModuleSub');
+  if(msub)msub.textContent='GPS fix acquired — NEO-6M tracking';
+  if(document.getElementById('gpsLat'))document.getElementById('gpsLat').textContent=lat.toFixed(5);
+  if(document.getElementById('gpsLon'))document.getElementById('gpsLon').textContent=lon.toFixed(5);
+  if(document.getElementById('gpsSats'))document.getElementById('gpsSats').textContent=point.satellites||'—';
+  const ago=Math.floor((Date.now()-new Date(point.timestamp))/1000);
+  if(document.getElementById('gpsLastSeen'))document.getElementById('gpsLastSeen').textContent=ago<3?'Just now':`${ago}s ago`;
+}
+
+function setGpsOffline() {
+  const d=document.getElementById('dashGpsDot'),l=document.getElementById('dashGpsLabel');
+  if(d){d.style.background='var(--text3)';d.style.boxShadow='none';}
+  if(l){l.textContent='GPS Offline';l.style.color='var(--text3)';}
+  const fd=document.getElementById('findGpsDot'),fl=document.getElementById('findGpsLabel');
+  if(fd){fd.style.background='var(--text3)';fd.style.boxShadow='none';}
+  if(fl){fl.textContent='Tap a station to filter bikes';fl.style.color='var(--text3)';}
+  const od=document.getElementById('gpsOnlineDot'),ol=document.getElementById('gpsOnlineLabel');
+  if(od){od.style.background='var(--text3)';od.style.boxShadow='none';}
+  if(ol){ol.textContent='GPS Offline';ol.style.color='var(--text3)';}
+  const gb=document.getElementById('gpsBadge'); if(gb)gb.style.display='none';
+  const ms=document.getElementById('gpsModuleStatus');
+  if(ms){ms.textContent='⚠️ Offline';ms.style.color='var(--amber)';}
+  const msub=document.getElementById('gpsModuleSub');
+  if(msub)msub.textContent='No GPS data. Make sure ESP32+NEO-6M is powered & WiFi connected.';
+}
+
+// ─── GPS Trail table ─────────────────────────────────────────────────────
+function renderGpsTrail(trail) {
+  const el=document.getElementById('gpsTrailCount'); if(el)el.textContent=trail.length+' points';
+  const tbody=document.getElementById('gpsTrailBody'); if(!tbody)return;
+  if(!trail.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);">No trail data yet.</td></tr>';return;}
+  tbody.innerHTML=trail.slice().reverse().slice(0,30).map((p,i)=>`
+    <tr>
+      <td style="color:var(--text3);">${trail.length-i}</td>
+      <td style="color:var(--accent);">${p.latitude.toFixed(5)}</td>
+      <td style="color:var(--accent2);">${p.longitude.toFixed(5)}</td>
+      <td>${p.satellites||'—'}</td>
+      <td style="color:var(--text3);font-size:12px;">${new Date(p.timestamp).toLocaleTimeString()}</td>
+    </tr>`).join('');
+}
+
+// ─── GLOBAL GPS POLL — updates ALL maps simultaneously ───────────────────
+async function pollGps() {
+  try {
+    if (!currentUser) return;
+    const token = localStorage.getItem('kuettrack_token');
+    const res = await fetch(`${API}/api/gps/user/${currentUser.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) { setGpsOffline(); renderNearbyStations(null,null); return; }
+    const point = await res.json();
+
+    // If last GPS update is older than 60s, treat as offline
+    if (Date.now() - new Date(point.timestamp) > 60000) { setGpsOffline(); return; }
+
+    globalGpsPoint = point;
+    const lat = point.latitude, lon = point.longitude;
+
+    // Update all four maps
+    updateDashMap(lat, lon);
+    updateFindMap(lat, lon);
+    updateRideMap(lat, lon);
+    updateGpsPageMap(lat, lon);
+
+    // Update UI elements
+    setGpsOnline(point);
+
+    // ── Nearby stations: fetch from server (sorted by real GPS distance) ──
+    fetchNearbyStations(lat, lon);
+    updateNearestStation(lat, lon);
+
+    // Speed from GPS hardware
+    const sp = document.getElementById('rideSpeed');
+    if (sp && rideState) sp.textContent = (point.speed||0).toFixed(1)+' km/h';
+    const sb = document.getElementById('speedBar');
+    if (sb && rideState) sb.style.width = Math.min((point.speed||0)/30*100,100)+'%';
+
+    // Trail (non-blocking)
+    fetch(`${API}/api/gps/user/${currentUser.id}/trail?limit=100`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(r=>r.ok?r.json():null).then(t=>{ if(t) renderGpsTrail(t); }).catch(()=>{});
+
+  } catch(e) {
+    setGpsOffline();
+  }
+}
+
+function startGpsPoll() {
+  if (gpsPollTimer) return;
+  pollGps();
+  gpsPollTimer = setInterval(pollGps, 4000);
+}
+
+function stopGpsPoll() {
+  clearInterval(gpsPollTimer);
+  gpsPollTimer = null;
+}
+
+// ─── Shared: refresh ride history from server ────────────────────────────
+async function refreshRideHistory() {
+  try {
+    const token = localStorage.getItem('kuettrack_token');
+    const hRes = await fetch(`${API}/api/rides/user/${currentUser.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!hRes.ok) return;
+    const rides = await hRes.json();
+    rideHistory = rides.map(r => ({
+      date:     new Date(r.startTime).toLocaleDateString('en-GB'),
+      bike:     '#' + (r.bikeId || 'BIKE-001'),
+      from:     r.stationStart || '—',
+      duration: r.duration || '—',
+      distance: (r.distanceKm || 0) + ' km',
+      fare:     '৳' + (r.fare || 0),
+      status:   r.status === 'completed' ? 'completed' : r.status
+    }));
+    renderHistory();
+    document.getElementById('metRides').textContent = rideHistory.length;
+    const totalDist = rides.reduce((a, r) => a + (r.distanceKm || 0), 0);
+    document.getElementById('metDist').textContent = totalDist.toFixed(1) + ' km';
+  } catch(e) {}
+}
+
+// ─── RIDE STATUS POLL — detects when RFID tap ends ride server-side ──────
+let rideStatusTimer = null;
+
+async function pollRideStatus() {
+  if (!rideState || !currentUser) return;
+  try {
+    const token = localStorage.getItem('kuettrack_token');
+    const res = await fetch(`${API}/api/rides/active`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    // If server says no active ride but dashboard still thinks one is running → RFID ended it
+    if (!data.active && rideState) {
+      clearInterval(rideState.timerInterval);
+      const elapsed = rideState.elapsed || 0;
+      const mins = Math.floor(elapsed / 60), secs = elapsed % 60;
+      const fare = Math.max(Math.ceil(elapsed / 60) * 2, 2);
+      // Refresh wallet balance from server
+      try {
+        const meRes = await fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (meRes.ok) {
+          const fresh = await meRes.json();
+          currentUser = { ...currentUser, ...fresh };
+          localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+          populateUI(currentUser);
+        }
+      } catch(e) {}
+      rideState = null;
+      document.getElementById('activeRidePanel').classList.remove('show');
+      document.getElementById('rideBadge').style.display = 'none';
+      updateRideUI();
+      stopRideStatusPoll();
+      await refreshRideHistory();
+      showToast(`✅ Ride ended via RFID! Fare ৳${fare} deducted.`);
+    }
+  } catch(e) {}
+}
+
+function startRideStatusPoll() {
+  if (rideStatusTimer) return;
+  rideStatusTimer = setInterval(pollRideStatus, 5000);
+}
+
+function stopRideStatusPoll() {
+  clearInterval(rideStatusTimer);
+  rideStatusTimer = null;
+}
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+</body>
+</html>
