@@ -456,7 +456,6 @@ app.get('/api/auth/user-by-rfid/:uid', async (req, res) => {
         email: user.email,
         plan: user.plan,
         walletBalance: user.walletBalance,
-        rfidUid: user.rfidUid,
         role: user.role
       }
     };
@@ -471,7 +470,6 @@ app.get('/api/auth/user-by-rfid/:uid', async (req, res) => {
         email: user.email,
         plan: user.plan,
         walletBalance: user.walletBalance,
-        rfidUid: user.rfidUid,
         role: user.role
       }
     });
@@ -985,7 +983,8 @@ const rideSchema = new mongoose.Schema({
   duration:    { type: String, default: null },   // "00:14:32"
   distanceKm:  { type: Number, default: 0 },
   fare:        { type: Number, default: 0 },
-  status:      { type: String, enum: ['active', 'completed', 'error'], default: 'active' }
+  status:      { type: String, enum: ['active', 'completed', 'error'], default: 'active' },
+  pendingCommand: { type: String, default: null }
 });
 const Ride = mongoose.model('Ride', rideSchema);
 
@@ -1057,8 +1056,8 @@ app.post('/api/rides/start', async (req, res) => {
     // Check for already active ride
     const existing = await Ride.findOne({ userId: user._id, status: 'active' });
     if (existing) {
-      // Re-issue the unlock command in case the ESP32 missed it
-      bikeCommands[bikeId] = { command: 'unlock', rfidUid: rfidUid.toUpperCase(), rideId: existing._id.toString() };
+      // Re-issue the unlock command — persist in DB so it survives server restarts
+      await Ride.findByIdAndUpdate(existing._id, { pendingCommand: 'unlock' });
       console.log(`🔄 Re-issued unlock command for ${bikeId} (ride already active: ${existing._id})`);
       return res.status(200).json({ message: 'Unlock command re-issued.', rideId: existing._id });
     }
@@ -1067,16 +1066,11 @@ app.post('/api/rides/start', async (req, res) => {
       userId: user._id,
       rfidUid: rfidUid.toUpperCase(),
       bikeId,
-      stationStart: stationId
+      stationStart: stationId,
+      pendingCommand: 'unlock'   // ← persisted in DB, survives Render restarts
     });
 
-    // ── Store pending unlock command for ESP32 to poll ──────────────────
-    bikeCommands[bikeId] = {
-      command: 'unlock',
-      rfidUid: rfidUid.toUpperCase(),
-      rideId:  ride._id.toString()
-    };
-    console.log(`🔑 Unlock command queued for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName}`);
+    console.log(`🔑 Unlock command queued (DB) for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName}`);
 
     res.status(201).json({
       message: 'Ride started. Unlock command sent to bike.',
@@ -1093,14 +1087,15 @@ app.post('/api/rides/start', async (req, res) => {
 // Returns the command once and clears it (one-shot delivery).
 app.get('/api/bikes/:bikeId/command', (req, res) => {
   const bikeId = req.params.bikeId;
-  const cmd = bikeCommands[bikeId];
-  if (!cmd) {
+  // Query DB for a pending unlock command for this bike
+  const ride = await Ride.findOne({ bikeId, pendingCommand: 'unlock', status: 'active' });
+  if (!ride) {
     return res.status(204).send();   // no pending command
   }
   // Clear so the command is only delivered once
-  delete bikeCommands[bikeId];
-  console.log(`📡 Command delivered to ${bikeId}: ${cmd.command} (rfid=${cmd.rfidUid})`);
-  res.json(cmd);
+  await Ride.findByIdAndUpdate(ride._id, { pendingCommand: null });
+  console.log(`📡 Command delivered to ${bikeId}: unlock (rfid=${ride.rfidUid} rideId=${ride._id})`);
+  res.json({ command: 'unlock', rfidUid: ride.rfidUid, rideId: ride._id.toString() });
 });
 
 // POST /api/rides/end — ESP-32 calls when user taps card to return bike
