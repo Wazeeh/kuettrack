@@ -75,7 +75,7 @@
 // ─── Timing ───────────────────────────────────────────────────────────
 #define GPS_SEND_INTERVAL       5000
 #define GPS_NOFIX_INTERVAL      15000
-#define CMD_POLL_INTERVAL       3000   // how often to poll for unlock command
+#define CMD_POLL_INTERVAL       1000   // how often to poll for unlock command
 #define CONNECTION_CHECK        10000
 #define LCD_UPDATE_INTERVAL     3000
 #define READ_COOLDOWN           2000   // min ms between RFID reads
@@ -396,17 +396,18 @@ void checkBikeCommand() {
   String response = http.getString();
   http.end();
 
+  Serial.printf("[CMD] poll HTTP %d\n", code);
   if (code != 200) return;  // 204 = no command pending
 
   // Parse response: { "command": "unlock", "rfidUid": "...", "rideId": "..." }
   DynamicJsonDocument doc(256);
   if (deserializeJson(doc, response) != DeserializationError::Ok) return;
 
-  String cmd      = doc["command"] | "";
-  String rfidUid  = doc["rfidUid"] | "";
-  String rideId   = doc["rideId"]  | "";
+  String cmd    = doc["command"] | "";
+  String rideId = doc["rideId"]  | "";
 
-  if (cmd == "unlock" && rfidUid == currentRfidUid) {
+  // Only check command type — server already validated rfidUid when storing command
+  if (cmd == "unlock") {
     currentRideId = rideId;
     Serial.println("[CMD] Unlock command received! Ride ID: " + rideId);
     bikeState = STATE_RIDE_ACTIVE;
