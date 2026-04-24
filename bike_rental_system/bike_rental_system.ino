@@ -22,8 +22,8 @@
 #include <HTTPClient.h>
 
 // ─── WiFi Credentials ────────────────────────────────────────
-const char* WIFI_SSID     = "KJAH_201";      // 🔁 Replace
-const char* WIFI_PASSWORD = "36140343";  // 🔁 Replace
+const char* WIFI_SSID     = "YOUR_WIFI_SSID";      // 🔁 Replace with your WiFi SSID
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";  // 🔁 Replace with your WiFi password
 
 // ─── Server URLs (KuetTrack backend) ─────────────────────────
 // 🔁 Replace YOUR_SERVER_IP with the LAN IP printed when server starts

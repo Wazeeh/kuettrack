@@ -8,8 +8,8 @@
 // ═══════════════════════════════════════════════════════
 
 // ─── WiFi Configuration ───────────────────────────────
-const char* SSID       = "KJAH_201";
-const char* PASSWORD   = "36140343";
+const char* SSID       = "YOUR_WIFI_SSID";
+const char* PASSWORD   = "YOUR_WIFI_PASSWORD";
 const char* SERVER_URL = "http://192.168.0.103:5000/api/gps/update";
 
 // ─── GPS Configuration ────────────────────────────────

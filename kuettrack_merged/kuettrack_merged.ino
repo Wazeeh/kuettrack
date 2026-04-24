@@ -40,8 +40,8 @@
 #include "soc/rtc_cntl_reg.h"
 
 // ─── WiFi ─────────────────────────────────────────────────────────────
-#define WIFI_SSID      "KJAH_201"
-#define WIFI_PASSWORD  "36140343"
+#define WIFI_SSID      "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD  "YOUR_WIFI_PASSWORD"
 
 // ─── Backend ──────────────────────────────────────────────────────────
 #define API_BASE_URL   "http://192.168.0.116:5000"
