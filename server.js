@@ -1085,7 +1085,7 @@ app.post('/api/rides/start', async (req, res) => {
 
 // GET /api/bikes/:bikeId/command — ESP32 polls this to get pending commands (e.g., unlock)
 // Returns the command once and clears it (one-shot delivery).
-app.get('/api/bikes/:bikeId/command', (req, res) => {
+app.get('/api/bikes/:bikeId/command', async (req, res) => {
   const bikeId = req.params.bikeId;
   // Query DB for a pending unlock command for this bike
   const ride = await Ride.findOne({ bikeId, pendingCommand: 'unlock', status: 'active' });
