@@ -1031,6 +1031,18 @@ window.onload = async () => {
   if (!token || !stored) { window.location.href = 'login_rfid.html'; return; }
   currentUser = JSON.parse(stored);
   populateUI(currentUser);
+
+  // Always re-fetch full user from server to ensure rfidUid and wallet are up-to-date
+  try {
+    const meRes = await fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+    if (meRes.ok) {
+      const fresh = await meRes.json();
+      currentUser = { ...currentUser, ...fresh };
+      localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+      populateUI(currentUser);
+    }
+  } catch(e) {}
+
   renderBikes('all');
   // Init dashboard home map at KUET default (GPS will pan it live)
   initDashMap(22.8997, 89.5010);

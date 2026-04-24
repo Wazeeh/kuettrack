@@ -456,6 +456,7 @@ app.get('/api/auth/user-by-rfid/:uid', async (req, res) => {
         email: user.email,
         plan: user.plan,
         walletBalance: user.walletBalance,
+        rfidUid: user.rfidUid,
         role: user.role
       }
     };
@@ -470,6 +471,7 @@ app.get('/api/auth/user-by-rfid/:uid', async (req, res) => {
         email: user.email,
         plan: user.plan,
         walletBalance: user.walletBalance,
+        rfidUid: user.rfidUid,
         role: user.role
       }
     });
