@@ -172,7 +172,7 @@ const gpsLocationSchema = new mongoose.Schema({
   altitude:   { type: Number, default: 0 },
   satellites: { type: Number, default: 0 },
   accuracy:   { type: Number, default: 0 },
-  timestamp:  { type: Date, default: Date.now, index: true },
+  timestamp:  { type: Date, default: Date.now },
   isLive:     { type: Boolean, default: true }  // Mark as live tracking session
 });
 
@@ -1488,11 +1488,21 @@ app.get('/api/system/health', async (req, res) => {
 });
 
 // ─── Serve frontend HTML files statically ────────────
-// No Live Server needed — open http://localhost:5000/dashboard.html directly
+// HTML files live in the same directory as server.js (project root)
+// Works both locally and on Render without any folder restructuring
 const path = require('path');
-app.use(express.static(path.join(__dirname, 'Public')));
+
+// Check if a 'public' or 'Public' subfolder exists; fall back to root
+const fs = require('fs');
+const publicDir = fs.existsSync(path.join(__dirname, 'public'))
+  ? path.join(__dirname, 'public')
+  : fs.existsSync(path.join(__dirname, 'Public'))
+    ? path.join(__dirname, 'Public')
+    : __dirname;
+
+app.use(express.static(publicDir));
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'Public', 'index.html'));
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 // ─── Start Server ─────────────────────────────────────
