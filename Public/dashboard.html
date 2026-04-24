@@ -977,7 +977,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 
 <script>
 // ─── STATE ───────────────────────────────────────────
-const API = window.location.origin.includes('5000') ? 'http://localhost:5000' : 'http://localhost:5000'; // backend always on 5000
+const API = "https://kuettrack.onrender.com"; // Use same origin, port 5000
 let currentUser = null;
 let rideState = null; // { bikeId, station, startTime, timerInterval }
 let rideHistory = [];
