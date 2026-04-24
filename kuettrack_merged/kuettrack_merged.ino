@@ -40,12 +40,12 @@
 #include "soc/rtc_cntl_reg.h"
 
 // ─── WiFi ─────────────────────────────────────────────────────────────
-#define WIFI_SSID      "YOUR_WIFI_SSID"
-#define WIFI_PASSWORD  "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID      "Z60 plus"
+#define WIFI_PASSWORD  "Symphony23"
 
 // ─── Backend ──────────────────────────────────────────────────────────
-#define API_BASE_URL   "https://kuettrack.onrender.com"
-#define GPS_SERVER_URL "https://kuettrack.onrender.com/api/gps/update"
+#define API_BASE_URL   "http://YOUR_BACKEND_IP:5000"
+#define GPS_SERVER_URL "http://YOUR_BACKEND_IP:5000/api/gps/update"
 #define API_TIMEOUT_RFID  8000
 #define API_TIMEOUT_GPS   2000
 #define API_TIMEOUT_CMD   3000   // command poll is short
