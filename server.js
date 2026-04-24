@@ -60,12 +60,7 @@ const bikeCommands = {};
 // ─── MongoDB Atlas Connection ─────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose.connect(MONGODB_URI, {
-  ssl: true,
-  replicaSet: 'atlas-zmvl6p-shard-0',
-  authSource: 'admin',
-  retryWrites: true,
-})
+mongoose.connect(MONGODB_URI)
 .then(() => {
   console.log('✅ Connected to MongoDB Atlas (Cluster0)');
 })
@@ -86,7 +81,12 @@ mongoose.connection.on('reconnected', () => {
 async function seedDefaultAdmin() {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@velotrack.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@1234';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      console.warn('⚠️  ADMIN_PASSWORD not set in .env. Using secure random password.');
+      const crypto = require('crypto');
+      process.env.ADMIN_PASSWORD = crypto.randomBytes(12).toString('hex');
+    }
 
     const existing = await User.findOne({ email: adminEmail });
     if (!existing) {
@@ -102,8 +102,8 @@ async function seedDefaultAdmin() {
         role: 'admin',
         isActive: true
       });
-      console.log(`✅ Default admin created → ${adminEmail} / ${adminPassword}`);
-      console.log('   ⚠️  Change ADMIN_EMAIL and ADMIN_PASSWORD in your .env after first login!');
+      console.log(`✅ Default admin created → ${adminEmail}`);
+      console.log('   ⚠️  ADMIN_PASSWORD was set in .env. Change it after first login!');
     } else if (existing.role !== 'admin') {
       // Promote to admin if the account exists but isn't admin yet
       await User.findByIdAndUpdate(existing._id, { role: 'admin' });
@@ -113,9 +113,11 @@ async function seedDefaultAdmin() {
     }
 
     // ─── Auto-seed demo RFID user ──────────────────────────────
+    // Demo user only created if DEMO_PASSWORD is explicitly set in .env
+    const demoPassword = process.env.DEMO_PASSWORD;
     const rfidUser = await User.findOne({ rfidUid: new RegExp('^C33B51FE$', 'i') });
-    if (!rfidUser) {
-      const demoHash = await bcrypt.hash('Demo@1234', 12);
+    if (!rfidUser && demoPassword) {
+      const demoHash = await bcrypt.hash(demoPassword, 12);
       await User.create({
         firstName: 'Wazeeh',
         lastName: 'Tahmin Showmo',
@@ -1350,8 +1352,8 @@ app.post('/api/payment/create-checkout-session', authMiddleware, async (req, res
     const user = await User.findById(req.user.userId).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
-    // Use localhost (reliable for local development)
-    const FRONTEND_URL = 'http://localhost:5000';
+    // Use environment variable for deployment compatibility
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5000';
     console.log(`📍 Payment session: amount=৳${amount}, redirect=${FRONTEND_URL}/dashboard.html`);
 
     const session = await s.checkout.sessions.create({
