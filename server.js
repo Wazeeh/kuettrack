@@ -1044,14 +1044,17 @@ app.get('/api/transactions', authMiddleware, async (req, res) => {
 
 // POST /api/rides/start — Dashboard calls this when user clicks "Start Ride"
 // Creates ride in DB and sets a pending unlock command for the ESP32 to pick up.
-app.post('/api/rides/start', async (req, res) => {
+app.post('/api/rides/start', authMiddleware, async (req, res) => {
   try {
-    const { rfidUid, stationId, bikeId } = req.body;
-    if (!rfidUid || !stationId || !bikeId) {
-      return res.status(400).json({ message: 'rfidUid, stationId, and bikeId are required.' });
+    const { stationId, bikeId } = req.body;
+    if (!stationId || !bikeId) {
+      return res.status(400).json({ message: 'stationId and bikeId are required.' });
     }
-    const user = await User.findOne({ rfidUid: new RegExp('^' + rfidUid + '$', 'i'), isActive: true });
-    if (!user) return res.status(404).json({ message: 'RFID card not recognized.' });
+    // Look up user from auth token — no need for dashboard to send rfidUid
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    if (!user.rfidUid) return res.status(400).json({ message: 'No RFID card linked to your account.' });
+    const rfidUid = user.rfidUid;
 
     // Check for already active ride
     const existing = await Ride.findOne({ userId: user._id, status: 'active' });

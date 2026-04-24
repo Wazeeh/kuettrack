@@ -1211,27 +1211,10 @@ async function startRide() {
 
   try {
     const token = localStorage.getItem('kuettrack_token');
-
-    // Always fetch fresh user to guarantee rfidUid is present
-    try {
-      const meRes = await fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-      if (meRes.ok) {
-        const fresh = await meRes.json();
-        currentUser = { ...currentUser, ...fresh, id: currentUser.id || fresh._id };
-        localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
-      }
-    } catch(e) {}
-
-    if(!currentUser.rfidUid) {
-      showToast('❌ No RFID card linked to your account. Ask admin to assign one.');
-      return;
-    }
-
     const res = await fetch(`${API}/api/rides/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        rfidUid:   currentUser.rfidUid,
         bikeId:    'BIKE-001',
         stationId: 'STATION-001'
       })
