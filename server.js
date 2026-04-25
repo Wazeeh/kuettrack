@@ -15,7 +15,8 @@ function getStripe() {
   if (stripe) return stripe;
   try {
     const key = process.env.STRIPE_SECRET_KEY;
-    if (!key || key.startsWith('sk_test_xxx')) {
+    const isPlaceholder = !key || key.startsWith('sk_test_xxx') || key.includes('your_actual') || key.includes('your_stripe') || key.length < 32;
+    if (isPlaceholder) {
       console.warn('⚠️  STRIPE_SECRET_KEY missing or placeholder in .env');
       return null;
     }
@@ -60,6 +61,162 @@ const bikeCommands = {};
 // ESP32 picks these up via the same GET /api/bikes/:bikeId/command endpoint
 const bikeLockCommands = {};
 
+
+// ─── MQTT Real-Time Layer ─────────────────────────────────────────────────────
+// Using HiveMQ public broker (no account needed). For production swap to
+// HiveMQ Cloud / EMQX Cloud free tier and set MQTT_BROKER in .env.
+//
+// Topics:
+//   kuettrack/BIKE-001/gps   ← ESP32 publishes GPS  → server saves to DB + forwards
+//   kuettrack/BIKE-001/rfid  ← ESP32 publishes RFID scan → server auth → publishes auth result
+//   kuettrack/BIKE-001/auth  → server publishes auth result → ESP32 reads
+//   kuettrack/BIKE-001/cmd   → server publishes unlock/lock → ESP32 reads instantly
+//   kuettrack/BIKE-001/status← ESP32 LWT (online/offline)
+// ─────────────────────────────────────────────────────────────────────────────
+let mqttClient = null;
+
+function initMqtt() {
+  try {
+    const mqtt = require('mqtt');
+    const broker   = process.env.MQTT_BROKER   || 'mqtt://broker.hivemq.com';
+    const mqttUser = process.env.MQTT_USERNAME  || '';
+    const mqttPass = process.env.MQTT_PASSWORD  || '';
+    const opts = {
+      clientId: 'kuettrack-server-' + Math.random().toString(16).slice(2, 8),
+      clean: true,
+      reconnectPeriod: 3000,
+      connectTimeout: 10000,
+    };
+    if (mqttUser) { opts.username = mqttUser; opts.password = mqttPass; }
+
+    mqttClient = mqtt.connect(broker, opts);
+
+    mqttClient.on('connect', () => {
+      console.log('✅ MQTT connected to ' + broker);
+      mqttClient.subscribe('kuettrack/+/gps',   { qos: 1 });
+      mqttClient.subscribe('kuettrack/+/rfid',  { qos: 1 });
+      mqttClient.subscribe('kuettrack/+/status',{ qos: 0 });
+    });
+
+    mqttClient.on('error',   e => console.warn('[MQTT] error:', e.message));
+    mqttClient.on('offline', () => console.warn('[MQTT] offline'));
+    mqttClient.on('reconnect', () => console.log('[MQTT] reconnecting...'));
+
+    mqttClient.on('message', async (topic, payload) => {
+      try {
+        const parts   = topic.split('/');   // ['kuettrack','BIKE-001','gps']
+        const bikeId  = parts[1];
+        const msgType = parts[2];
+        const data    = JSON.parse(payload.toString());
+
+        // ── GPS message from ESP32 ──────────────────────────────────────────
+        if (msgType === 'gps') {
+          const { lat, lon, speed, altitude, satellites, hasFix, deviceId } = data;
+          const timestamp = Date.now();
+          const fix = hasFix !== false;
+          const point = { lat: parseFloat(lat)||0, lon: parseFloat(lon)||0,
+            speed: parseFloat(speed)||0, altitude: parseFloat(altitude)||0,
+            satellites: parseInt(satellites)||0, deviceId, timestamp, hasFix: fix };
+
+          if (fix) {
+            latestGps = point;
+            gpsHistory.push(point);
+            if (gpsHistory.length > 300) gpsHistory.shift();
+          } else if (latestGps) {
+            latestGps.timestamp  = timestamp;
+            latestGps.satellites = point.satellites;
+            latestGps.hasFix     = false;
+          }
+
+          // Save to DB (non-blocking)
+          try {
+            const user = await User.findOne({ rfidUid: deviceId });
+            if (user && fix) {
+              await GpsLocation.create({
+                userId: user._id, deviceId,
+                latitude: point.lat, longitude: point.lon,
+                speed: point.speed, altitude: point.altitude,
+                satellites: point.satellites,
+                timestamp: new Date(timestamp), isLive: true
+              });
+            }
+          } catch (dbErr) { console.warn('[MQTT GPS] DB save failed:', dbErr.message); }
+          console.log(`📍 [MQTT GPS] ${bikeId} lat=${point.lat} lon=${point.lon} fix=${fix}`);
+        }
+
+        // ── RFID scan from ESP32 ────────────────────────────────────────────
+        if (msgType === 'rfid') {
+          const { uid, stationId } = data;
+          if (!uid) return;
+          const rfidUid = uid.toUpperCase().trim();
+          const user    = await User.findOne({ rfidUid: new RegExp('^' + rfidUid + '$', 'i'), isActive: true }).select('-password');
+
+          if (!user) {
+            mqttPublish(`kuettrack/${bikeId}/auth`, { uid: rfidUid, authorized: false, message: 'Card not registered' });
+            console.log(`❌ [MQTT RFID] denied: ${rfidUid}`);
+            return;
+          }
+
+          const activeRide = await Ride.findOne({ userId: user._id, status: 'active' });
+          let lockAction;
+          if (activeRide) {
+            lockAction = 'lock';
+            const endTime    = new Date();
+            const elapsedSec = Math.floor((endTime - activeRide.startTime) / 1000);
+            const mins = Math.floor(elapsedSec / 60), secs = elapsedSec % 60;
+            const duration   = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+            const distanceKm = parseFloat((elapsedSec * 0.00278).toFixed(2));
+            const fare       = Math.max(Math.ceil(elapsedSec / 60) * 2, 2);
+            const newBalance = Math.max((user.walletBalance || 0) - fare, 0);
+            await User.findByIdAndUpdate(user._id, { walletBalance: newBalance });
+            await Ride.findByIdAndUpdate(activeRide._id, {
+              status: 'completed', endTime, stationEnd: stationId || bikeId,
+              duration, distanceKm, fare
+            });
+            mqttPublish(`kuettrack/${bikeId}/auth`, {
+              uid: rfidUid, authorized: true, lockAction: 'lock',
+              userName: user.firstName, duration, fare, newBalance
+            });
+            console.log(`🔒 [MQTT RFID] ride ended for ${rfidUid} fare=৳${fare}`);
+          } else {
+            lockAction = 'unlock';
+            const ride = await Ride.create({ userId: user._id, rfidUid, bikeId, stationStart: stationId || bikeId });
+            mqttPublish(`kuettrack/${bikeId}/auth`, {
+              uid: rfidUid, authorized: true, lockAction: 'unlock',
+              userName: user.firstName, rideId: ride._id.toString()
+            });
+            console.log(`🔓 [MQTT RFID] ride started for ${rfidUid} → ${user.firstName}`);
+          }
+
+          // Also store for website polling (login_rfid.html)
+          const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+          latestRfidDetection = {
+            uid: rfidUid, authorized: true, timestamp: Date.now(),
+            userName: user.firstName + ' ' + user.lastName, token,
+            user: { id: user._id, firstName: user.firstName, lastName: user.lastName,
+                    email: user.email, plan: user.plan, walletBalance: user.walletBalance, role: user.role }
+          };
+        }
+
+        // ── Status message from ESP32 ───────────────────────────────────────
+        if (msgType === 'status') {
+          console.log(`[MQTT STATUS] ${bikeId}: ${JSON.stringify(data)}`);
+        }
+      } catch (e) {
+        console.warn('[MQTT message] parse error:', e.message);
+      }
+    });
+  } catch (e) {
+    console.warn('[MQTT] not available — run: npm install mqtt  Error:', e.message);
+  }
+}
+
+// Helper: publish JSON to a topic (QoS 1, retained=false)
+function mqttPublish(topic, payload, retained = false) {
+  if (!mqttClient || !mqttClient.connected) return;
+  mqttClient.publish(topic, JSON.stringify(payload), { qos: 1, retain: retained });
+}
+
 // ─── MongoDB Atlas Connection ─────────────────────────
 // ─── MongoDB Atlas Connection ─────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -67,6 +224,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 mongoose.connect(MONGODB_URI)
 .then(() => {
   console.log('✅ Connected to MongoDB Atlas (Cluster0)');
+  initMqtt();   // Start MQTT after DB is ready
 })
 .catch((err) => {
   console.error('❌ MongoDB connection failed:', err.message);
@@ -700,6 +858,7 @@ app.post('/api/gps/update', async (req, res) => {
     }
 
     console.log(`📡 GPS: lat=${point.lat.toFixed(5)} lon=${point.lon.toFixed(5)} speed=${point.speed} sats=${point.satellites} RFID=${deviceId}`);
+    mqttPublish('kuettrack/BIKE-001/gps', point);
     res.json({ received: true, timestamp: timestamp, deviceId: deviceId });
   } catch (err) {
     console.error('GPS update error:', err);
@@ -988,8 +1147,7 @@ const rideSchema = new mongoose.Schema({
   distanceKm:  { type: Number, default: 0 },
   fare:        { type: Number, default: 0 },
   status:      { type: String, enum: ['active', 'completed', 'error'], default: 'active' },
-  pendingCommand: { type: String, default: null },
-  lockPending: { type: Boolean, default: false }  // persisted lock command for ESP32
+  pendingCommand: { type: String, default: null }
 });
 const Ride = mongoose.model('Ride', rideSchema);
 
@@ -1079,6 +1237,8 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
     });
 
     console.log(`🔑 Unlock command queued (DB) for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName}`);
+    // ── Also publish via MQTT for instant delivery (no polling needed) ──
+    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid });
 
     res.status(201).json({
       message: 'Ride started. Unlock command sent to bike.',
@@ -1096,25 +1256,15 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
 app.get('/api/bikes/:bikeId/command', async (req, res) => {
   const bikeId = req.params.bikeId;
 
-  // ── 1. Check in-memory lock command (fast path) ──
+  // ── 1. Check for pending LOCK command (set when website ends a ride) ──
   if (bikeLockCommands[bikeId]) {
     const info = bikeLockCommands[bikeId];
     delete bikeLockCommands[bikeId];
-    // Also clear DB persisted flag
-    await Ride.findByIdAndUpdate(info.rideId, { lockPending: false }).catch(()=>{});
-    console.log(`📡 Lock command (mem) delivered to ${bikeId}`);
+    console.log(`📡 Lock command delivered to ${bikeId}`);
     return res.json({ command: 'lock', rideId: info.rideId || '' });
   }
 
-  // ── 2. Check DB-persisted lock command (survives server restarts) ──
-  const pendingLock = await Ride.findOne({ bikeId, lockPending: true }).sort({ endTime: -1 });
-  if (pendingLock) {
-    await Ride.findByIdAndUpdate(pendingLock._id, { lockPending: false });
-    console.log(`📡 Lock command (DB) delivered to ${bikeId}: rideId=${pendingLock._id}`);
-    return res.json({ command: 'lock', rideId: pendingLock._id.toString() });
-  }
-
-  // ── 3. Check for pending UNLOCK command (set when website starts a ride) ──
+  // ── 2. Check for pending UNLOCK command (set when website starts a ride) ──
   const ride = await Ride.findOne({ bikeId, pendingCommand: 'unlock', status: 'active' });
   if (!ride) {
     return res.status(204).send();   // no pending command
@@ -1162,13 +1312,14 @@ app.post('/api/rides/end/user', authMiddleware, async (req, res) => {
       stationEnd: stationId || 'Unknown',
       duration,
       distanceKm,
-      fare,
-      lockPending: true   // ← persisted in DB, survives Render restarts
+      fare
     });
 
-    // ── Queue lock command (in-memory for speed + DB for persistence) ──
+    // ── Queue lock command so ESP32 locks solenoid on next poll ──
     bikeLockCommands[ride.bikeId] = { rideId: ride._id.toString() };
     console.log(`🔒 Lock command queued (web) for ${ride.bikeId} | user: ${user.firstName}`);
+    // ── Also publish via MQTT for instant delivery ──
+    mqttPublish(`kuettrack/${ride.bikeId}/cmd`, { command: 'lock', rideId: ride._id.toString() });
 
     res.json({
       message: 'Ride ended.',
@@ -1226,6 +1377,7 @@ app.post('/api/rides/end', async (req, res) => {
     // ── Queue lock command so ESP32 locks solenoid on next poll ──
     bikeLockCommands[ride.bikeId] = { rideId: ride._id.toString() };
     console.log(`🔒 Lock command queued for ${ride.bikeId}`);
+    mqttPublish(`kuettrack/${ride.bikeId}/cmd`, { command: 'lock', rideId: ride._id.toString() });
 
     res.json({
       message: 'Ride ended.',
@@ -1422,6 +1574,42 @@ app.delete('/api/admin/users/:id/rfid', authMiddleware, async (req, res) => {
 });
 
 
+// ─── Direct Wallet Top-Up (no Stripe required) ──────────
+// POST /api/wallet/topup — instantly credits user wallet (demo / non-Stripe flow)
+// Used when STRIPE_SECRET_KEY is not configured (free-tier / Bangladesh users).
+app.post('/api/wallet/topup', authMiddleware, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || isNaN(amount) || amount < 10 || amount > 10000) {
+      return res.status(400).json({ message: 'Amount must be between ৳10 and ৳10,000.' });
+    }
+    const topup = parseInt(amount, 10);
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { $inc: { walletBalance: topup } },
+      { new: true }
+    ).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    // Log as a transaction
+    await Transaction.create({
+      userId: user._id,
+      type: 'credit',
+      title: 'Wallet Top-Up',
+      description: `Direct top-up of ৳${topup}`,
+      amount: topup,
+      newBalance: user.walletBalance,
+      reference: 'direct-topup'
+    });
+
+    console.log(`💰 Wallet topped up: user=${user.email} +৳${topup} → ৳${user.walletBalance}`);
+    res.json({ success: true, addedAmount: topup, newBalance: user.walletBalance });
+  } catch (err) {
+    console.error('Wallet topup error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 // ─── Stripe Payment Routes ─────────────────────────────
 
 // POST /api/payment/create-checkout-session
@@ -1439,11 +1627,7 @@ app.post('/api/payment/create-checkout-session', authMiddleware, async (req, res
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
     // Use environment variable for deployment compatibility
-    // Auto-detect frontend URL from request (works on Render, any host)
-    const origin = req.headers.origin || req.headers.referer;
-    let FRONTEND_URL;
-    if (origin) { try { FRONTEND_URL = new URL(origin).origin; } catch(_) {} }
-    if (!FRONTEND_URL) { FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:' + (process.env.PORT || 5000); }
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5000';
     console.log(`📍 Payment session: amount=৳${amount}, redirect=${FRONTEND_URL}/dashboard.html`);
 
     const session = await s.checkout.sessions.create({

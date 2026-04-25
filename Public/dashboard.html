@@ -18,7 +18,7 @@
   --r:14px;--r-sm:10px;--r-lg:20px;
 }
 html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.6;min-height:100vh;display:flex;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.6;min-height:100vh;display:flex;overflow-x:hidden;}
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
@@ -86,7 +86,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 .sidebar-bottom{padding:16px 12px;border-top:1px solid var(--border);}
 
 /* ── MAIN CONTENT ── */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden;height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden;}
 .topbar{
   position:sticky;top:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
@@ -432,11 +432,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 
 /* ── MOBILE MENU TOGGLE ── */
 .menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);}
-
-/* ── OVERLAY for mobile sidebar ── */
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;}
-.sidebar-overlay.show{display:block;}
-
 @media(max-width:900px){
   .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);}
   .sidebar.open{transform:translateX(0);}
@@ -446,32 +441,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
   .bikes-grid{grid-template-columns:1fr 1fr;}
   .ar-stats{grid-template-columns:1fr 1fr;}
   .profile-grid{grid-template-columns:1fr;}
-  .page{padding:20px 16px;}
-  .topbar{padding:12px 16px;}
-  .wallet-hero{padding:24px 16px;}
-  .wallet-balance{font-size:40px;}
-  .card-body{padding:14px 16px;}
-  .card-header{padding:14px 16px 12px;}
-  .notif-drawer{width:100%;max-width:100%;}
-  .modal{margin:16px;padding:24px;}
-  .ride-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-}
-@media(max-width:500px){
-  .metrics-row{grid-template-columns:1fr 1fr;}
-  .bikes-grid{grid-template-columns:1fr;}
-  .ar-stats{grid-template-columns:1fr 1fr;}
-  .ar-val{font-size:20px;}
-  .topup-grid{grid-template-columns:1fr 1fr;}
-  .wallet-actions{flex-direction:column;gap:8px;}
-  .w-btn{width:100%;text-align:center;}
-  .page{padding:14px 12px;}
-  .topbar{padding:10px 12px;}
-  .topbar-title{font-size:15px;}
-  .wallet-chip{padding:6px 10px;font-size:13px;}
-  .toast{left:12px;right:12px;bottom:16px;max-width:none;}
-  .confirm-rows{gap:8px;}
-  .modal{margin:10px;padding:18px;}
-  .confirm-bike-id{font-size:20px;}
 }
 </style>
 </head>
@@ -524,9 +493,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
     </button>
   </div>
 </aside>
-
-<!-- SIDEBAR OVERLAY (mobile) -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <!-- MAIN -->
 <main class="main">
@@ -852,7 +818,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
             <div class="topup-option" onclick="selectTopup(200,this)"><div class="topup-amount">৳200</div><div class="topup-label">Popular</div></div>
             <div class="topup-option" onclick="selectTopup(500,this)"><div class="topup-amount">৳500</div><div class="topup-label">Best Value</div></div>
           </div>
-          <button class="modal-btn" id="topupConfirmBtn" style="display:none;" onclick="confirmTopup()">Confirm Top-Up</button>
+          <button class="modal-btn" id="topupConfirmBtn" style="display:none;" onclick="confirmTopup()">✅ Add to Wallet</button>
         </div>
       </div>
     </div>
@@ -975,7 +941,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 <div class="modal-overlay" id="topupModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">💳 Top Up Wallet</div>
+      <div class="modal-title">💰 Top Up Wallet</div>
       <button class="modal-close" onclick="closeModal('topupModal')">✕</button>
     </div>
     <div class="topup-grid" id="modalTopupGrid">
@@ -998,7 +964,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
     <div style="font-size:14px;color:var(--text2);line-height:1.8;" id="payErrDetail"></div>
     <div style="margin-top:22px;display:flex;gap:10px;justify-content:flex-end;">
       <button class="modal-btn" style="background:var(--surface2);color:var(--text2);" onclick="closeModal('paymentErrorModal')">Close</button>
-      <button class="modal-btn" style="background:rgba(0,229,160,0.12);color:var(--accent);" onclick="closeModal('paymentErrorModal');initiateStripeTopup(selectedTopupAmount||modalTopupAmt||100)">Retry</button>
+      <button class="modal-btn" style="background:rgba(0,229,160,0.12);color:var(--accent);" onclick="closeModal('paymentErrorModal');openTopupModal()">Try Again</button>
     </div>
   </div>
 </div>
@@ -1017,16 +983,16 @@ let rideState = null; // { bikeId, station, startTime, timerInterval }
 let rideHistory = [];
 let transactions = [];
 
-// Demo bikes data — hardwareId must match BIKE_ID in kuettrack_merged.ino
+// Demo bikes data
 const BIKES = [
-  {id:'VT-001',hardwareId:'BIKE-001',station:'Central',type:'City Cruiser',battery:92,distance:4.2,status:'available'},
-  {id:'VT-007',hardwareId:'BIKE-001',station:'Central',type:'City Cruiser',battery:78,distance:12.1,status:'available'},
-  {id:'VT-012',hardwareId:'BIKE-001',station:'KU',type:'Mountain Bike',battery:55,distance:8.7,status:'available'},
-  {id:'VT-018',hardwareId:'BIKE-001',station:'KU',type:'City Cruiser',battery:88,distance:3.3,status:'available'},
-  {id:'VT-023',hardwareId:'BIKE-001',station:'North',type:'City Cruiser',battery:95,distance:1.1,status:'available'},
-  {id:'VT-031',hardwareId:'BIKE-001',station:'East',type:'City Cruiser',battery:40,distance:19.4,status:'available'},
-  {id:'VT-042',hardwareId:'BIKE-001',station:'North',type:'Mountain Bike',battery:67,distance:6.8,status:'available'},
-  {id:'VT-055',hardwareId:'BIKE-001',station:'East',type:'City Cruiser',battery:22,distance:28.5,status:'maintenance'},
+  {id:'VT-001',station:'Central',type:'City Cruiser',battery:92,distance:4.2,status:'available'},
+  {id:'VT-007',station:'Central',type:'City Cruiser',battery:78,distance:12.1,status:'available'},
+  {id:'VT-012',station:'KU',type:'Mountain Bike',battery:55,distance:8.7,status:'available'},
+  {id:'VT-018',station:'KU',type:'City Cruiser',battery:88,distance:3.3,status:'available'},
+  {id:'VT-023',station:'North',type:'City Cruiser',battery:95,distance:1.1,status:'available'},
+  {id:'VT-031',station:'East',type:'City Cruiser',battery:40,distance:19.4,status:'available'},
+  {id:'VT-042',station:'North',type:'Mountain Bike',battery:67,distance:6.8,status:'available'},
+  {id:'VT-055',station:'East',type:'City Cruiser',battery:22,distance:28.5,status:'maintenance'},
 ];
 
 // ─── INIT ─────────────────────────────────────────────
@@ -1133,6 +1099,7 @@ window.onload = async () => {
   } catch(e) { /* ignore */ }
 
   checkStripeReturn();
+  initMqttDashboard();
 };
 
 function populateUI(u) {
@@ -1169,12 +1136,6 @@ function showPage(id, btn) {
   const titles = {dashboard:'Dashboard',find:'Find a Bike',myride:'My Ride',gps:'Live GPS Tracking',history:'Ride History',wallet:'Wallet',profile:'Profile'};
   document.getElementById('topbarTitle').textContent = titles[id]||id;
   if(id==='myride') updateRideUI();
-  // Close sidebar on mobile when page changes
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('show');
-  // Scroll main content to top
-  const main = document.querySelector('.main');
-  if(main) main.scrollTo({top:0, behavior:'instant'});
   // Leaflet maps need invalidateSize() when their container becomes visible
   setTimeout(() => {
     if (id==='dashboard' && dashLeafMap) dashLeafMap.invalidateSize();
@@ -1189,13 +1150,11 @@ function showPage(id, btn) {
     }
     if (id==='gps' && gpsLeafMap) gpsLeafMap.invalidateSize();
   }, 60);
+  window.scrollTo(0,0);
 }
 
 function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const ov = document.getElementById('sidebarOverlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('show');
+  document.getElementById('sidebar').classList.toggle('open');
 }
 
 // ─── BIKE RENDERING ──────────────────────────────────
@@ -1217,7 +1176,7 @@ function renderBikes(filter) {
         <div class="bstat"><div class="bstat-val">${b.type==='City Cruiser'?'🏙️':'⛰️'}</div><div class="bstat-label">${b.type}</div></div>
       </div>
       ${b.status==='available'
-        ? `<button class="bike-select-btn" onclick="openConfirm('${b.id}','${b.station}','${b.hardwareId||'BIKE-001'}')">Select Bike →</button>`
+        ? `<button class="bike-select-btn" onclick="openConfirm('${b.id}','${b.station}')">Select Bike →</button>`
         : `<button class="bike-select-btn" disabled>${b.status==='busy'?'In Use':'Under Maintenance'}</button>`}
     </div>
   `).join('');
@@ -1232,9 +1191,9 @@ function filterStation(s){
 
 // ─── CONFIRM / START RIDE ────────────────────────────
 let pendingBike = null;
-function openConfirm(bikeId, station, hardwareId) {
+function openConfirm(bikeId, station) {
   if(rideState){showToast('⚠️ You already have an active ride!','var(--amber)');return;}
-  pendingBike={bikeId, station, hardwareId: hardwareId || 'BIKE-001'};
+  pendingBike={bikeId,station};
   document.getElementById('confirmBikeId').textContent = '#'+bikeId;
   document.getElementById('confirmStation').textContent = station+' Station';
   const bal = currentUser.walletBalance||0;
@@ -1248,47 +1207,31 @@ function openConfirm(bikeId, station, hardwareId) {
 
 async function startRide() {
   if(!pendingBike)return;
-
-  // Prevent double-tap
-  const confirmBtn = document.getElementById('confirmRideBtn');
-  if(confirmBtn.disabled) return;
-  confirmBtn.disabled = true;
-  confirmBtn.textContent = '⏳ Sending command…';
-
   closeModal('confirmModal');
-  showToast('🔄 Connecting to bike… (may take up to 10s on first use)');
+  showToast('🔄 Sending unlock command to bike...');
 
   try {
     const token = localStorage.getItem('kuettrack_token');
-    const hardwareId = pendingBike.hardwareId || 'BIKE-001';
-
-    // ── Ping server first so Render wakes up (avoids apparent freeze) ──
-    try {
-      await Promise.race([
-        fetch(`${API}/api/system/health`),
-        new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),4000))
-      ]);
-    } catch(e) { /* ignore ping failure — continue to start ride */ }
-
     const res = await fetch(`${API}/api/rides/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ bikeId: hardwareId, stationId: 'STATION-001' })
+      body: JSON.stringify({
+        bikeId:    pendingBike.bikeId || 'BIKE-001',
+        stationId: 'STATION-001'
+      })
     });
     const data = await res.json();
 
     if (!res.ok) {
-      showToast('❌ ' + (data.message || 'Could not start ride.'), 'var(--red)');
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '🚴 Start Ride';
+      showToast('❌ ' + (data.message || 'Could not start ride.'));
       return;
     }
 
+    // Store rideId for end-ride call
     const rideId = data.rideId || '';
 
     rideState = {
       bikeId:    pendingBike.bikeId,
-      hardwareId: hardwareId,
       station:   pendingBike.station,
       rideId:    rideId,
       startTime: Date.now(),
@@ -1304,47 +1247,12 @@ async function startRide() {
     updateRideUI();
     rideState.timerInterval = setInterval(tickRide,1000);
     startRideStatusPoll();
-
-    // Immediately start / accelerate GPS poll so map shows live position
-    if(gpsPollTimer){ clearInterval(gpsPollTimer); gpsPollTimer=null; }
-    pollGps();
-    gpsPollTimer = setInterval(pollGps, 3000); // faster during active ride
-
-    showToast('✅ Unlock command sent! Tap RFID card on bike dock to release it.');
-
-    // Poll /api/bikes/:id/command delivery confirmation — show user when ESP32 got it
-    pollUnlockDelivery(hardwareId, rideId);
+    showToast('🚴 Ride started! Tap RFID card on bike to unlock, then enjoy your trip!');
 
   } catch(err) {
     console.error('startRide error:', err);
-    showToast('❌ Network error. Check connection and try again.', 'var(--red)');
-    confirmBtn.disabled = false;
-    confirmBtn.textContent = '🚴 Start Ride';
+    showToast('❌ Network error. Please try again.');
   }
-}
-
-// Poll until ESP32 picks up the unlock command (max 30s)
-async function pollUnlockDelivery(bikeId, rideId) {
-  const token = localStorage.getItem('kuettrack_token');
-  let attempts = 0;
-  const check = async () => {
-    attempts++;
-    try {
-      // If no active ride in DB anymore for this rideId, command was delivered
-      const r = await fetch(`${API}/api/rides/active`, { headers:{Authorization:`Bearer ${token}`} });
-      if(r.ok){
-        const d = await r.json();
-        // If server still has active ride with pendingCommand=null, ESP32 got it
-        // We can't directly query pendingCommand from frontend, so check ride exists
-        if(d.active && d.rideId === rideId) {
-          // Still active — good, ride is ongoing
-          return;
-        }
-      }
-    } catch(e){}
-    if(attempts < 15) setTimeout(check, 2000);
-  };
-  setTimeout(check, 3000);
 }
 
 function tickRide() {
@@ -1513,12 +1421,12 @@ function selectTopup(amt, el) {
   el.classList.add('selected');
   const btn = document.getElementById('topupConfirmBtn');
   btn.style.display = '';
-  btn.textContent = `Pay ৳${amt} via Stripe`;
+  btn.textContent = `✅ Add ৳${amt} to Wallet`;
 }
 
 function confirmTopup() {
   if (!selectedTopupAmount) return;
-  initiateStripeTopup(selectedTopupAmount);
+  performTopup(selectedTopupAmount);
   document.querySelectorAll('#topupGrid .topup-option').forEach(o => o.classList.remove('selected'));
   document.getElementById('topupConfirmBtn').style.display = 'none';
   selectedTopupAmount = 0;
@@ -1530,76 +1438,47 @@ function selectModalTopup(amt, el) {
   el.classList.add('selected');
   const btn = document.getElementById('modalTopupBtn');
   btn.disabled = false; btn.style.opacity = '1';
-  btn.textContent = `Pay ৳${amt} via Stripe`;
+  btn.textContent = `✅ Add ৳${amt} to Wallet`;
 }
 
 function doTopup() {
   if (!modalTopupAmt) return;
-  initiateStripeTopup(modalTopupAmt);
+  const amt = modalTopupAmt;
   closeModal('topupModal');
   modalTopupAmt = 0;
   document.querySelectorAll('#modalTopupGrid .topup-option').forEach(o => o.classList.remove('selected'));
   const btn = document.getElementById('modalTopupBtn');
   btn.disabled = true; btn.style.opacity = '0.4'; btn.textContent = 'Select an amount';
+  performTopup(amt);
 }
 
-async function initiateStripeTopup(amt) {
+// Direct wallet top-up — calls /api/wallet/topup (no Stripe required)
+async function performTopup(amt) {
   const token = localStorage.getItem('kuettrack_token');
-
-  // Step 1 — check server is reachable before attempting payment
+  showToast('⏳ Processing top-up...');
   try {
-    const ping = await fetch(`${API}/api/system/health`);
-    if (!ping.ok) throw new Error('unhealthy');
-  } catch (_) {
-    showPaymentError(
-      '🔌 Cannot reach backend server',
-      'Make sure <code>server.js</code> is running:<br><br>' +
-      '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:6px;">node server.js</code>'
-    );
-    return;
-  }
-
-  showToast('⏳ Connecting to Stripe...');
-  try {
-    const res = await fetch(`${API}/api/payment/create-checkout-session`, {
+    const res = await fetch(`${API}/api/wallet/topup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ amount: amt })
     });
-
-    const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      throw new Error('Server returned an unexpected response. Check server logs.');
-    }
-
     const data = await res.json();
-
-    if (res.status === 503) {
-      showPaymentError(
-        '💳 Stripe not configured',
-        'Add your Stripe key to <code>.env</code>, then restart the server:<br><br>' +
-        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">STRIPE_SECRET_KEY=sk_test_...</code>' +
-        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">npm install stripe</code>'
-      );
+    if (!res.ok) {
+      showToast('❌ ' + (data.message || 'Top-up failed. Try again.'));
       return;
     }
-
-    if (!res.ok) {
-      console.error('Payment creation failed:', { status: res.status, data });
-      throw new Error(data.message || `Server error: ${res.status}`);
-    }
-
-    if (!data.url) {
-      console.error('No payment URL in response:', data);
-      throw new Error('Payment session created but no redirect URL provided');
-    }
-
-    // All good — redirect to Stripe hosted checkout
-    window.location.href = data.url;
-
+    // Update balance from server response
+    currentUser.walletBalance = data.newBalance;
+    localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+    populateUI(currentUser);
+    // Add to local transaction list
+    const txn = { type: 'credit', title: 'Wallet Top-Up', date: new Date().toLocaleString(), amount: amt };
+    transactions.unshift(txn);
+    renderTransactions();
+    showToast(`✅ ৳${amt} added! New balance: ৳${data.newBalance}`);
   } catch (e) {
-    console.error('Stripe topup error:', e);
-    showPaymentError('❌ Payment Error', `${e.message}<br><br>Check browser console for details.`);
+    console.error('Top-up error:', e);
+    showToast('❌ Network error. Check connection and try again.');
   }
 }
 
@@ -1609,60 +1488,11 @@ function showPaymentError(title, detail) {
   document.getElementById('paymentErrorModal').classList.add('show');
 }
 
-// Called on return from Stripe (success redirect lands with ?topup=success&amount=X&session_id=...)
+// No-op — kept for compatibility (Stripe return params no longer used)
 async function checkStripeReturn() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('topup') === 'success') {
-    const amt = parseInt(params.get('amount') || '0', 10);
-    const sessionId = params.get('session_id');
-    const token = localStorage.getItem('kuettrack_token');
-    
-    // Wait a moment for webhook to process
-    await new Promise(r => setTimeout(r, 1000));
-    
-    try {
-      // Verify payment and get updated balance from server
-      if (sessionId) {
-        const verifyRes = await fetch(`${API}/api/payment/verify-session/${sessionId}`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        });
-        if (verifyRes.ok) {
-          const verifyData = await verifyRes.json();
-          if (verifyData.paid) {
-            currentUser.walletBalance = verifyData.walletBalance;
-            localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
-            console.log(`✅ Payment verified! Balance: ৳${currentUser.walletBalance}`);
-          }
-        }
-      }
-      
-      // Also fetch fresh user data to ensure we have latest
-      const res = await fetch(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) {
-        const data = await res.json();
-        currentUser.walletBalance = data.walletBalance;
-        localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
-      }
-    } catch (e) {
-      console.error('Failed to fetch updated balance:', e);
-    }
-    
-    // Update UI
-    populateUI(currentUser);
-    
-    if (amt) {
-      const txn = { type: 'credit', title: 'Wallet Top-Up (Stripe)', date: new Date().toLocaleString(), amount: amt };
-      transactions.unshift(txn);
-      renderTransactions();
-      // Save to backend
-      await saveTransaction('credit', 'Wallet Top-Up (Stripe)', amt, `Payment verified from Stripe`, sessionId);
-      showToast(`✅ ৳${amt} added to your wallet!`);
-    }
-    // Clean URL
-    window.history.replaceState({}, '', window.location.pathname);
-  }
   if (params.get('topup') === 'cancel') {
-    showToast('⚠️ Payment cancelled.');
+    showToast('⚠️ Top-up cancelled.');
     window.history.replaceState({}, '', window.location.pathname);
   }
 }
@@ -2066,14 +1896,99 @@ async function pollGps() {
 }
 
 function startGpsPoll() {
-  if (gpsPollTimer) return;
+  // MQTT handles real-time GPS — run one HTTP poll as immediate fallback
   pollGps();
-  gpsPollTimer = setInterval(pollGps, 4000);
+  // HTTP fallback every 30s (in case MQTT drops)
+  if (!gpsPollTimer) gpsPollTimer = setInterval(pollGps, 30000);
 }
 
 function stopGpsPoll() {
   clearInterval(gpsPollTimer);
   gpsPollTimer = null;
+}
+
+// ─── MQTT Dashboard Client ────────────────────────────────────────────────────
+let mqttDash = null;
+function initMqttDashboard() {
+  if (typeof mqtt === 'undefined') { console.warn('[MQTT] library not loaded'); return; }
+  const BROKER_WSS = 'wss://broker.hivemq.com:8884/mqtt';
+  const clientId   = 'kuettrack-dash-' + Math.random().toString(16).slice(2, 8);
+
+  try {
+    mqttDash = mqtt.connect(BROKER_WSS, {
+      clientId,
+      clean: true,
+      reconnectPeriod: 4000,
+      connectTimeout: 10000,
+    });
+  } catch(e) { console.warn('[MQTT] connect error:', e); return; }
+
+  mqttDash.on('connect', () => {
+    console.log('[MQTT] Dashboard connected');
+    mqttDash.subscribe('kuettrack/BIKE-001/gps',    { qos: 1 });
+    mqttDash.subscribe('kuettrack/BIKE-001/status', { qos: 0 });
+    mqttDash.subscribe('kuettrack/BIKE-001/auth',   { qos: 1 });
+  });
+  mqttDash.on('error',   e => console.warn('[MQTT]', e.message));
+  mqttDash.on('offline', () => console.warn('[MQTT] offline'));
+
+  mqttDash.on('message', (topic, payload) => {
+    try {
+      const d = JSON.parse(payload.toString());
+      const msgType = topic.split('/')[2];
+
+      // ── Real-time GPS update ──────────────────────────────────────────────
+      if (msgType === 'gps' && d.lat != null && d.lon != null) {
+        const lat = parseFloat(d.lat), lon = parseFloat(d.lon);
+        if (!lat && !lon) return;
+        const point = {
+          latitude: lat, longitude: lon,
+          speed: d.speed || 0, satellites: d.satellites || 0,
+          timestamp: d.timestamp || Date.now(), hasFix: d.hasFix !== false
+        };
+        globalGpsPoint = point;
+
+        // Update all maps
+        updateDashMap(lat, lon);
+        updateFindMap(lat, lon);
+        updateRideMap(lat, lon);
+        updateGpsPageMap(lat, lon);
+        setGpsOnline(point);
+        fetchNearbyStations(lat, lon);
+        updateNearestStation(lat, lon);
+
+        const sp = document.getElementById('rideSpeed');
+        if (sp && rideState) sp.textContent = (d.speed||0).toFixed(1) + ' km/h';
+        const sb = document.getElementById('speedBar');
+        if (sb && rideState) sb.style.width = Math.min((d.speed||0)/30*100, 100) + '%';
+      }
+
+      // ── ESP32 online/offline status ───────────────────────────────────────
+      if (msgType === 'status') {
+        const online = d.online !== false;
+        console.log('[MQTT] ESP32 status:', online ? 'ONLINE' : 'OFFLINE');
+        const ind = document.getElementById('gpsStatusIndicator');
+        if (ind) {
+          ind.style.background = online ? 'var(--accent)' : 'var(--error)';
+          ind.title = online ? 'ESP32 Online' : 'ESP32 Offline';
+        }
+      }
+
+      // ── Auth result (RFID tap on physical bike) ───────────────────────────
+      if (msgType === 'auth' && d.authorized && rideState) {
+        // If server ended ride (second tap on ESP32), sync dashboard state
+        if (d.lockAction === 'lock') {
+          console.log('[MQTT] Ride ended by physical RFID tap');
+          stopRideTimer();
+          stopRideStatusPoll();
+          rideState = null;
+          document.getElementById('rideStatusCard').style.display = 'none';
+          showToast(`🔒 Ride ended. Fare: ৳${d.fare || 0}`);
+          refreshRideHistory();
+        }
+      }
+    } catch(e) { /* ignore malformed */ }
+  });
 }
 
 // ─── Shared: refresh ride history from server ────────────────────────────
@@ -2149,6 +2064,7 @@ function stopRideStatusPoll() {
 }
 
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.5.0/mqtt.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </body>
 </html>
