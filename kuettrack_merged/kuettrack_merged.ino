@@ -1,7 +1,7 @@
 // =====================================================================
 // KuetTrack — Merged Controller  (Single ESP32)
 // RFID RC522 + GPS NEO-6M + 16×2 I2C LCD + Solenoid Lock (Relay)
-// Real-time via MQTT  ──  HTTP used only as fallback
+// RFID auth via HTTP (primary, instant) — MQTT for GPS + dashboard commands
 // =====================================================================
 // ── Required Libraries (install in Arduino IDE Library Manager) ──────
 //   • MFRC522          (by GithubCommunity)
@@ -51,7 +51,7 @@
 #define TOPIC_CMD      "kuettrack/BIKE-001/cmd"     // server → ESP32 subscribes
 #define TOPIC_STATUS   "kuettrack/BIKE-001/status"  // ESP32 → publishes (LWT)
 
-// ─── HTTP Backend (fallback only) ─────────────────────────────────────
+// ─── HTTP Backend (RFID auth — primary path) ──────────────────────────────
 #define API_BASE_URL   "https://kuettrack.onrender.com"
 
 // ─── Hardware Pins ────────────────────────────────────────────────────
@@ -78,7 +78,7 @@
 #define CONNECTION_CHECK    15000
 #define LCD_UPDATE_INTERVAL  3000
 #define READ_COOLDOWN        2000
-#define AUTH_TIMEOUT        10000   // ms to wait for server auth response
+#define AUTH_TIMEOUT        12000   // safety net only — HTTP call itself has its own 10 s timeout
 #define MQTT_KEEPALIVE         60
 
 // ─── State Machine ────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ void connectToWiFi();
 void connectMqtt();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 void publishGps();
-void publishRfidScan(String uid);
+void httpRfidAuth(String uid);
 void publishStatus(bool online);
 void lockDoor();
 void unlockDoor();
@@ -265,7 +265,7 @@ void loop() {
           bikeState       = STATE_AUTH_PENDING;
           authRequestedAt = now;
           authPending     = true;
-          publishRfidScan(uid);
+          httpRfidAuth(uid);   // synchronous — result applied inside, state updated before returning
 
         } else if (bikeState == STATE_RFID_VERIFIED) {
           if (uid == currentRfidUid) {
@@ -283,7 +283,7 @@ void loop() {
             bikeState       = STATE_AUTH_PENDING;
             authRequestedAt = now;
             authPending     = true;
-            publishRfidScan(uid);
+            httpRfidAuth(uid);   // synchronous — handles lock/fare inline
           } else {
             lcdMsg("Ride in progress", "Use your card");
             feedbackAsync(false);
@@ -324,54 +324,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   DynamicJsonDocument doc(512);
   if (deserializeJson(doc, msg) != DeserializationError::Ok) return;
 
-  // ── Auth result ─────────────────────────────────────────────────
-  if (topicStr == TOPIC_AUTH) {
-    authPending = false;
-    bool authorized = doc["authorized"] | false;
-
-    if (!authorized) {
-      lcdMsg("ACCESS DENIED", "Not registered");
-      feedbackAsync(false);
-      bikeState = STATE_IDLE; currentRfidUid = "";
-      gpsWait(1500); lcdMsg("KuetTrack Ready", "Tap RFID card");
-      reinitRFID(); return;
-    }
-
-    String lockAction = doc["lockAction"] | "";
-    currentUserName   = doc["userName"]   | String("Rider");
-
-    if (lockAction == "unlock") {
-      currentRideId = doc["rideId"] | String("");
-      bikeState     = STATE_RIDE_ACTIVE;
-      lastGpsSend   = 0;
-      unlockDoor(); feedbackAsync(true);
-      lcd.clear();
-      lcd.setCursor(0,0); lcd.print(("Ride: " + currentUserName).substring(0,16));
-      lcd.setCursor(0,1); lcd.print("GPS updating...");
-
-    } else if (lockAction == "lock") {
-      String duration = doc["duration"] | String("00:00");
-      int    fare     = doc["fare"]     | 0;
-      lockDoor(); feedbackAsync(true);
-      bikeState = STATE_IDLE;
-      currentRfidUid = ""; currentRideId = ""; currentUserName = "";
-      lcd.clear();
-      lcd.setCursor(0,0); lcd.print("Ride Ended!");
-      lcd.setCursor(0,1);
-      String fs = "Fare:Tk" + String(fare) + " " + duration;
-      lcd.print(fs.substring(0,16));
-      gpsWait(3000); lcdMsg("KuetTrack Ready", "Tap RFID card");
-
-    } else {
-      // Verified — waiting for website to start ride
-      bikeState = STATE_RFID_VERIFIED;
-      lcdMsg("Verified!", currentUserName.substring(0,16));
-      feedbackAsync(true);
-      gpsWait(800); lcdMsg("Open app to", "start your ride");
-    }
-    reinitRFID();
-  }
-
   // ── Command from website (start/end ride) ───────────────────────
   if (topicStr == TOPIC_CMD) {
     String cmd    = doc["command"] | "";
@@ -402,19 +354,105 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 // ═════════════════════════════════════════════════════════════════════
 // Publish helpers
 // ═════════════════════════════════════════════════════════════════════
-void publishRfidScan(String uid) {
-  if (!mqttClient.connected()) connectMqtt();
-  StaticJsonDocument<128> doc;
-  doc["uid"] = uid; doc["bikeId"] = BIKE_ID; doc["stationId"] = STATION_ID;
-  char buf[128]; serializeJson(doc, buf);
-  bool ok = mqttClient.publish(TOPIC_RFID, buf, false);
-  Serial.printf("[MQTT TX] RFID scan %s → %s\n", uid.c_str(), ok?"OK":"FAIL");
-  if (!ok) {
-    lcdMsg("MQTT error", "Try again");
+// ─── httpRfidAuth — PRIMARY auth path ────────────────────────────────────
+// POST /api/rfid/scan → { authorized, lockAction, userName, rideId, duration, fare }
+// Synchronous: blocks until server responds or times out.
+// Replaces the old MQTT publish→wait→mqttCallback pattern.
+// Root cause of the timeout bug: Render free dyno sleeps → server MQTT client
+// disconnects from HiveMQ → no auth response ever arrives. HTTP wakes the dyno.
+void httpRfidAuth(String uid) {
+  authPending = false;
+
+  if (WiFi.status() != WL_CONNECTED) {
+    lcdMsg("No WiFi", "Cannot verify");
     feedbackAsync(false);
-    bikeState = STATE_IDLE; authPending = false; currentRfidUid = "";
+    bikeState = STATE_IDLE; currentRfidUid = "";
     gpsWait(1500); lcdMsg("KuetTrack Ready", "Tap RFID card");
+    reinitRFID(); return;
   }
+
+  // Build request body
+  StaticJsonDocument<128> reqDoc;
+  reqDoc["uid"]       = uid;
+  reqDoc["stationId"] = STATION_ID;
+  char body[128]; serializeJson(reqDoc, body);
+
+  HTTPClient http;
+  String url = String(API_BASE_URL) + "/api/rfid/scan";
+  http.begin(secureClient, url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(10000);   // 10 s covers Render cold-start (~7-8 s)
+
+  Serial.printf("[HTTP] POST %s uid=%s\n", url.c_str(), uid.c_str());
+  int code = http.POST(body);
+
+  if (code <= 0) {
+    Serial.printf("[HTTP] Error: %s\n", http.errorToString(code).c_str());
+    http.end();
+    lcdMsg("Server error", "Try again");
+    feedbackAsync(false);
+    bikeState = STATE_IDLE; currentRfidUid = "";
+    gpsWait(1500); lcdMsg("KuetTrack Ready", "Tap RFID card");
+    reinitRFID(); return;
+  }
+
+  String respBody = http.getString();
+  http.end();
+  Serial.printf("[HTTP] %d → %s\n", code, respBody.c_str());
+
+  DynamicJsonDocument doc(512);
+  if (deserializeJson(doc, respBody) != DeserializationError::Ok) {
+    lcdMsg("Parse error", "Try again");
+    feedbackAsync(false);
+    bikeState = STATE_IDLE; currentRfidUid = "";
+    gpsWait(1500); lcdMsg("KuetTrack Ready", "Tap RFID card");
+    reinitRFID(); return;
+  }
+
+  // ── Same logic that was in mqttCallback TOPIC_AUTH ───────────────────
+  bool authorized = doc["authorized"] | false;
+
+  if (!authorized) {
+    lcdMsg("ACCESS DENIED", "Not registered");
+    feedbackAsync(false);
+    bikeState = STATE_IDLE; currentRfidUid = "";
+    gpsWait(1500); lcdMsg("KuetTrack Ready", "Tap RFID card");
+    reinitRFID(); return;
+  }
+
+  String lockAction   = doc["lockAction"] | String("");
+  currentUserName     = doc["userName"]   | String("Rider");
+
+  if (lockAction == "unlock") {
+    currentRideId = doc["rideId"] | String("");
+    bikeState     = STATE_RIDE_ACTIVE;
+    lastGpsSend   = 0;
+    unlockDoor(); feedbackAsync(true);
+    lcd.clear();
+    lcd.setCursor(0,0); lcd.print(("Ride: " + currentUserName).substring(0,16));
+    lcd.setCursor(0,1); lcd.print("GPS updating...");
+
+  } else if (lockAction == "lock") {
+    String duration = doc["duration"] | String("00:00");
+    int    fare     = doc["fare"]     | 0;
+    lockDoor(); feedbackAsync(true);
+    bikeState = STATE_IDLE;
+    currentRfidUid = ""; currentRideId = ""; currentUserName = "";
+    lcd.clear();
+    lcd.setCursor(0,0); lcd.print("Ride Ended!");
+    lcd.setCursor(0,1);
+    String fs = "Fare:Tk" + String(fare) + " " + duration;
+    lcd.print(fs.substring(0,16));
+    gpsWait(3000); lcdMsg("KuetTrack Ready", "Tap RFID card");
+
+  } else {
+    // Authorized but no lockAction (e.g. verified, waiting for app to start)
+    bikeState = STATE_RFID_VERIFIED;
+    lcdMsg("Verified!", currentUserName.substring(0,16));
+    feedbackAsync(true);
+    gpsWait(800); lcdMsg("Open app to", "start your ride");
+  }
+  reinitRFID();
 }
 
 void publishGps() {
@@ -463,8 +501,7 @@ void connectMqtt() {
                               TOPIC_STATUS, 0, true, "{\"online\":false}");
     if (ok) {
       Serial.println(" connected!");
-      mqttClient.subscribe(TOPIC_AUTH, 1);
-      mqttClient.subscribe(TOPIC_CMD,  1);
+      mqttClient.subscribe(TOPIC_CMD,  1);   // dashboard unlock/lock commands
       publishStatus(true);
     } else {
       Serial.printf(" failed rc=%d. Retry in 3s\n", mqttClient.state());
