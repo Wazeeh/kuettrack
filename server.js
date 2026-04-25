@@ -1238,7 +1238,7 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
 
     console.log(`🔑 Unlock command queued (DB) for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName}`);
     // ── Also publish via MQTT for instant delivery (no polling needed) ──
-    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid });
+    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid, userName: user.firstName });
 
     res.status(201).json({
       message: 'Ride started. Unlock command sent to bike.',

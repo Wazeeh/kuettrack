@@ -431,9 +431,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease;}
 
 /* ── MOBILE MENU TOGGLE ── */
-.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);}
+.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--text);font-size:18px;line-height:1;}
+/* Sidebar backdrop */
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;backdrop-filter:blur(2px);}
+.sidebar-backdrop.show{display:block;}
+/* Mobile logout in topbar */
+.topbar-logout{display:none;background:none;border:1px solid rgba(255,80,80,0.3);border-radius:8px;padding:6px 12px;color:var(--red);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.topbar-logout:hover{background:rgba(255,80,80,0.1);}
+
 @media(max-width:900px){
-  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:200;}
   .sidebar.open{transform:translateX(0);}
   .menu-toggle{display:flex;align-items:center;justify-content:center;}
   .metrics-row{grid-template-columns:repeat(2,1fr);}
@@ -441,6 +448,40 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
   .bikes-grid{grid-template-columns:1fr 1fr;}
   .ar-stats{grid-template-columns:1fr 1fr;}
   .profile-grid{grid-template-columns:1fr;}
+  .page{padding:20px 16px;}
+  .topbar{padding:12px 16px;}
+  .topbar-logout{display:flex;align-items:center;gap:6px;}
+  .wallet-chip .w-bal-label{display:none;}
+  .notif-drawer{width:100%;max-width:100%;}
+  .toast{bottom:16px;right:16px;left:16px;max-width:none;}
+  .ar-stats .ar-val{font-size:20px;}
+  .wallet-balance{font-size:40px;letter-spacing:-2px;}
+  .wallet-hero{padding:24px 20px;}
+  .wallet-actions{flex-wrap:wrap;}
+  .w-btn{flex:1;min-width:120px;text-align:center;}
+  .modal{padding:24px 20px;}
+  .rfid-info{flex-wrap:wrap;}
+  .rfid-uid{margin-left:0;margin-top:8px;}
+  .topup-grid{grid-template-columns:1fr 1fr;}
+  .ride-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .ride-table{min-width:500px;}
+  .active-ride-panel{padding:20px 16px;}
+  .ar-header{flex-direction:column;gap:12px;align-items:flex-start;}
+  .card-header{padding:16px 16px 12px;}
+  .card-body{padding:16px;}
+  .confirm-bike-display{padding:16px;}
+  .dash-grid-full{gap:14px;}
+}
+@media(max-width:480px){
+  .metrics-row{grid-template-columns:1fr 1fr;}
+  .bikes-grid{grid-template-columns:1fr;}
+  .topbar-right{gap:8px;}
+  .wallet-chip{padding:6px 10px;font-size:13px;}
+  .ar-stats{grid-template-columns:1fr 1fr;}
+  .metric-val{font-size:22px;}
+  .topup-grid{grid-template-columns:1fr 1fr;}
+  .wallet-actions{flex-direction:column;}
+  .w-btn{width:100%;}
 }
 </style>
 </head>
@@ -494,6 +535,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
   </div>
 </aside>
 
+<!-- SIDEBAR BACKDROP -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
 <!-- MAIN -->
 <main class="main">
   <!-- TOPBAR -->
@@ -509,6 +553,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
       <div class="icon-btn" onclick="toggleNotif()">
         🔔<div class="notif-dot"></div>
       </div>
+      <button class="topbar-logout" onclick="logout()">🚪 Logout</button>
     </div>
   </header>
 
@@ -587,6 +632,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
         <a class="card-action" onclick="showPage('history',document.querySelector('[onclick*=history]'))">View All →</a>
       </div>
       <div class="card-body" style="padding:0 24px 20px;">
+        <div class="ride-table-wrap">
         <table class="ride-table" id="recentRidesTable">
           <thead>
             <tr>
@@ -597,6 +643,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
             <tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3);">No rides yet. <a style="color:var(--accent);cursor:pointer;" onclick="showPage('find',document.querySelector('[onclick*=find]'))">Rent your first bike →</a></td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
@@ -759,12 +806,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
         <div id="gpsTrailCount" style="font-size:13px;color:var(--text3);">0 points</div>
       </div>
       <div class="card-body" style="padding:0 24px 20px;max-height:220px;overflow-y:auto;">
+        <div class="ride-table-wrap">
         <table class="ride-table">
           <thead><tr><th>#</th><th>Latitude</th><th>Longitude</th><th>Satellites</th><th>Time</th></tr></thead>
           <tbody id="gpsTrailBody">
             <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);">No trail data yet.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
@@ -777,6 +826,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
         <div style="font-size:13px;color:var(--text3);" id="rideCount">0 total rides</div>
       </div>
       <div class="card-body" style="padding:0 24px 20px;">
+        <div class="ride-table-wrap">
         <table class="ride-table">
           <thead>
             <tr><th>Date</th><th>Bike ID</th><th>From</th><th>Duration</th><th>Distance</th><th>Fare</th><th>Status</th></tr>
@@ -785,6 +835,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
             <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3);">No ride history yet.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
@@ -1136,6 +1187,8 @@ function showPage(id, btn) {
   const titles = {dashboard:'Dashboard',find:'Find a Bike',myride:'My Ride',gps:'Live GPS Tracking',history:'Ride History',wallet:'Wallet',profile:'Profile'};
   document.getElementById('topbarTitle').textContent = titles[id]||id;
   if(id==='myride') updateRideUI();
+  // Close sidebar on mobile when navigating
+  if(window.innerWidth <= 900) closeSidebar();
   // Leaflet maps need invalidateSize() when their container becomes visible
   setTimeout(() => {
     if (id==='dashboard' && dashLeafMap) dashLeafMap.invalidateSize();
@@ -1154,7 +1207,14 @@ function showPage(id, btn) {
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  sb.classList.toggle('open');
+  bd.classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('show');
 }
 
 // ─── BIKE RENDERING ──────────────────────────────────

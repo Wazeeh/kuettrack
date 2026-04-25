@@ -331,13 +331,19 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     if (cmd == "unlock") {
       currentRideId = rideId;
+      // Capture rfidUid + userName from cmd so GPS publishes with the correct deviceId
+      String cmdRfid = doc["rfidUid"] | String("");
+      cmdRfid.toUpperCase();
+      if (cmdRfid.length() > 0) currentRfidUid = cmdRfid;
+      String uname = doc["userName"] | String("Rider");
+      if (uname.length() > 0) currentUserName = uname;
       bikeState     = STATE_RIDE_ACTIVE;
       lastGpsSend   = 0;
       unlockDoor(); feedbackAsync(true);
       lcd.clear();
       lcd.setCursor(0,0); lcd.print(("Ride: " + currentUserName).substring(0,16));
       lcd.setCursor(0,1); lcd.print("GPS updating...");
-      Serial.println("[CMD] UNLOCK received. Ride: " + rideId);
+      Serial.println("[CMD] UNLOCK rfid=" + currentRfidUid + " ride=" + rideId);
 
     } else if (cmd == "lock") {
       lockDoor(); feedbackAsync(false);
