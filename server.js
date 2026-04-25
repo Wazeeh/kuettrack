@@ -718,56 +718,52 @@ app.post('/api/rfid/scan', async (req, res) => {
     };
 
     // ─── Lock/Unlock Toggle Logic ─────────────────────────────
-    // Check if this user has an active ride in the database.
-    // First tap  → no active ride  → lockAction = "unlock" (start rental)
-    // Second tap → active ride found → lockAction = "lock"  (end rental)
+    // First tap  → no active ride  → authenticate only (ESP32 → STATE_RFID_VERIFIED)
+    //                                 User then selects bike on dashboard to start ride.
+    // Second tap → active ride found → end ride + lock solenoid
     const activeRide = await Ride.findOne({ userId: user._id, status: 'active' });
 
-    let lockAction;
+    let lockAction = null;
+    let duration, fare;   // declared here so they are in scope for res.json below
+
     if (activeRide) {
       // User is returning the bike — end the ride and lock
       lockAction = 'lock';
-      const endTime = new Date();
+      const endTime   = new Date();
       const elapsedSec = Math.floor((endTime - activeRide.startTime) / 1000);
       const mins = Math.floor(elapsedSec / 60);
       const secs = elapsedSec % 60;
-      const duration = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+      duration = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
       const distanceKm = parseFloat((elapsedSec * 0.00278).toFixed(2));
-      const fare = Math.max(Math.ceil(elapsedSec / 60) * 2, 2);
+      fare = Math.max(Math.ceil(elapsedSec / 60) * 2, 2);
       const newBalance = Math.max((user.walletBalance || 0) - fare, 0);
 
       await User.findByIdAndUpdate(user._id, { walletBalance: newBalance });
       await Ride.findByIdAndUpdate(activeRide._id, {
         status: 'completed',
         endTime,
-        stationEnd: stationId || 'BIKE-001',
+        stationEnd: stationId || activeRide.bikeId || 'BIKE-001',
         duration,
         distanceKm,
         fare
       });
       console.log(`🔒 Ride ended: ${rfidUid} | duration=${duration} fare=৳${fare} newBalance=৳${newBalance}`);
-      // Publish MQTT lock immediately — overrides any buffered QoS-1 unlock message
-      // the broker may re-deliver to the ESP32 after a reconnect
-      mqttPublish(`kuettrack/${activeRide.bikeId || stationId || 'BIKE-001'}/cmd`, {
+      // Publish MQTT lock immediately
+      mqttPublish(`kuettrack/${activeRide.bikeId || 'BIKE-001'}/cmd`, {
         command: 'lock', rideId: activeRide._id.toString()
       });
-    } else {
-      // No active ride — start a new one and unlock
-      lockAction = 'unlock';
-      await Ride.create({
-        userId: user._id,
-        rfidUid,
-        bikeId: stationId || 'BIKE-001',
-        stationStart: stationId || 'BIKE-001'
-      });
-      console.log(`🔓 Ride started: ${rfidUid} → ${user.firstName} ${user.lastName}`);
     }
+    // else: no active ride — just authenticate, no ride creation, no unlock.
+    // ESP32 will enter STATE_RFID_VERIFIED and display "Open app to start your ride".
+    // The dashboard POST /api/rides/start will create the ride and send the unlock command.
 
-    console.log(`✅ RFID authorized: ${rfidUid} → ${user.firstName} ${user.lastName} | lockAction: ${lockAction}`);
+    console.log(`✅ RFID authorized: ${rfidUid} → ${user.firstName} ${user.lastName} | lockAction: ${lockAction || 'none (verify only)'}`);
     res.json({
       authorized: true,
-      lockAction,
-      message: lockAction === 'unlock' ? 'Bike unlocked. Enjoy your ride!' : 'Bike locked. Ride ended.',
+      ...(lockAction && { lockAction }),
+      message: lockAction === 'lock'
+        ? 'Bike locked. Ride ended.'
+        : 'Authenticated. Select a bike in the app to start your ride.',
       userName: user.firstName,
       ...(lockAction === 'lock' && { duration, fare })
     });
@@ -1244,7 +1240,7 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
 
     console.log(`🔑 Unlock command queued (DB) for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName}`);
     // ── Also publish via MQTT for instant delivery (no polling needed) ──
-    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid });
+    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid, userName: user.firstName });
 
     res.status(201).json({
       message: 'Ride started. Unlock command sent to bike.',
