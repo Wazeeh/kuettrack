@@ -578,12 +578,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
         </div>
       </div>
       <div style="position:relative;">
-        <div id="adminGpsMapDiv" style="width:100%;height:440px;border-radius:0 0 14px 14px;display:none;"></div>
-        <div id="adminGpsWaiting" style="width:100%;height:440px;border-radius:0 0 14px 14px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
-          <div style="font-size:48px;">📡</div>
-          <div style="font-size:15px;font-weight:600;color:var(--text);">Waiting for GPS data from ESP32 #2...</div>
-          <div style="font-size:13px;color:var(--text3);">ESP32 devices send GPS coordinates via WiFi → server → this map updates live (4s refresh)</div>
-        </div>
+        <div id="adminGpsMapDiv" style="width:100%;height:440px;border-radius:0 0 14px 14px;"></div>
+        <div id="adminGpsWaiting" style="display:none;"></div>
       </div>
     </div>
 
@@ -1430,21 +1426,21 @@ function addAdminStationMarkers() {
 }
 
 function createAdminGpsMap(lat, lon) {
-  document.getElementById('adminGpsWaiting').style.display = 'none';
-  const div = document.getElementById('adminGpsMapDiv');
-  div.style.display = 'block';
+  if (adminGpsMapInited) return;
+  // Default to KUET Main Gate if no GPS fix yet
+  const mapLat = (lat && !isNaN(lat)) ? lat : 22.89970;
+  const mapLon = (lon && !isNaN(lon)) ? lon : 89.50100;
 
-  adminGpsLeafMap = L.map('adminGpsMapDiv', { zoomControl: true }).setView([lat, lon], 14);
+  adminGpsLeafMap = L.map('adminGpsMapDiv', { zoomControl: true }).setView([mapLat, mapLon], 14);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
   }).addTo(adminGpsLeafMap);
 
-  // Add docking station markers
   addAdminStationMarkers();
-
   adminGpsMapInited = true;
+  setTimeout(() => adminGpsLeafMap.invalidateSize(), 200);
 }
 
 function addUserMarker(userId, userName, lat, lon, speed) {
@@ -1561,7 +1557,9 @@ async function pollAdminGps() {
     
     // Add/update markers for all locations
     locations.forEach(loc => {
-      addUserMarker(loc.userId, loc.userName, loc.latitude, loc.longitude, loc.speed);
+      const bikeKey = loc.deviceId || String(loc.userId);
+      addAdminMqttMarker(bikeKey, loc.userName, loc.latitude, loc.longitude, loc.speed||0, loc.satellites||0);
+      upsertTrailRow(bikeKey, loc.userName, loc.latitude, loc.longitude, loc.speed||0, loc.satellites||0, new Date(loc.timestamp).getTime());
     });
     
     updateAdminGpsViewport();
@@ -1584,163 +1582,121 @@ async function pollAdminGps() {
 
 function startAdminGpsPoll() {
   if (adminGpsPollTimer) return;
-  // Immediate HTTP poll for initial data
+
+  // Create map immediately (centered on KUET) — don't wait for GPS fix
+  if (!adminGpsMapInited) createAdminGpsMap(22.89970, 89.50100);
+  setTimeout(() => { if (adminGpsLeafMap) adminGpsLeafMap.invalidateSize(); }, 300);
+
   pollAdminGps();
-  // HTTP fallback every 15s (MQTT handles real-time updates)
-  adminGpsPollTimer = setInterval(pollAdminGps, 15000);
-  setTimeout(() => { if (adminGpsLeafMap) adminGpsLeafMap.invalidateSize(); }, 80);
-  // Start MQTT for real-time GPS
+  adminGpsPollTimer = setInterval(pollAdminGps, 8000);   // HTTP fallback every 8s
+
+  // MQTT: real-time GPS updates
   initAdminMqtt();
 }
 
-// ─── Admin MQTT Client — real-time GPS for all bikes ─────────────────────────
-let adminMqttClient = null;
-// Per-bike latest point — { bikeId: { lat, lon, speed, satellites, timestamp, deviceId } }
-const adminMqttGpsCache = {};
+// ── Admin MQTT client — real-time GPS for all active bikes ──────────────────
+let adminMqttClient    = null;
+const adminMqttCache   = {};   // bikeId → { lat, lon, speed, satellites, timestamp, deviceId }
 
 function initAdminMqtt() {
   if (adminMqttClient) return;
-  if (typeof mqtt === 'undefined') { console.warn('[AdminMQTT] library not loaded'); return; }
+  if (typeof mqtt === "undefined") { console.warn("[AdminMQTT] library not loaded"); return; }
 
-  const BROKER_WSS = 'wss://broker.hivemq.com:8884/mqtt';
-  const clientId   = 'kuettrack-admin-' + Math.random().toString(16).slice(2, 8);
-
-  try {
-    adminMqttClient = mqtt.connect(BROKER_WSS, {
-      clientId,
-      clean: true,
-      reconnectPeriod: 5000,
-      connectTimeout: 12000,
-    });
-  } catch(e) { console.warn('[AdminMQTT] connect error:', e); return; }
-
-  adminMqttClient.on('connect', () => {
-    console.log('[AdminMQTT] Connected — subscribing to all bike GPS');
-    adminMqttClient.subscribe('kuettrack/+/gps',    { qos: 1 });
-    adminMqttClient.subscribe('kuettrack/+/status', { qos: 0 });
-    adminMqttClient.subscribe('kuettrack/+/rfid',   { qos: 0 });
+  adminMqttClient = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
+    clientId: "kuettrack-admin-" + Math.random().toString(16).slice(2,8),
+    clean: true,
+    reconnectPeriod: 5000,
+    connectTimeout: 12000,
   });
 
-  adminMqttClient.on('error',   e => console.warn('[AdminMQTT]', e.message));
-  adminMqttClient.on('offline', () => {
-    console.warn('[AdminMQTT] offline');
-    document.getElementById('adminGpsLabel').textContent = 'MQTT offline — using HTTP';
+  adminMqttClient.on("connect", () => {
+    console.log("[AdminMQTT] connected");
+    adminMqttClient.subscribe("kuettrack/+/gps",    { qos: 1 });
+    adminMqttClient.subscribe("kuettrack/+/status", { qos: 0 });
   });
+  adminMqttClient.on("error",   e => console.warn("[AdminMQTT]", e.message));
+  adminMqttClient.on("offline", () => console.warn("[AdminMQTT] offline"));
 
-  adminMqttClient.on('message', (topic, payload) => {
+  adminMqttClient.on("message", async (topic, payload) => {
     try {
-      const parts   = topic.split('/');
+      const parts   = topic.split("/");
       const bikeId  = parts[1];
       const msgType = parts[2];
       const d       = JSON.parse(payload.toString());
 
-      // ── Real-time GPS update ──────────────────────────────────────────────
-      if (msgType === 'gps') {
+      if (msgType === "gps") {
         const lat = parseFloat(d.lat), lon = parseFloat(d.lon);
-        const hasFix = d.hasFix !== false;
-        if (!hasFix || !lat || !lon) return;
+        if (!lat || !lon || d.hasFix === false) return;
 
-        // Cache latest point per bike
-        adminMqttGpsCache[bikeId] = {
-          lat, lon,
-          speed:      d.speed      || 0,
-          satellites: d.satellites || 0,
-          timestamp:  d.timestamp  || Date.now(),
-          deviceId:   d.deviceId   || bikeId,
-          bikeId
-        };
+        adminMqttCache[bikeId] = { lat, lon, speed: d.speed||0, satellites: d.satellites||0,
+                                   timestamp: d.timestamp||Date.now(), deviceId: d.deviceId||bikeId };
 
-        // Initialize map if not done yet
+        // Init map if not ready
         if (!adminGpsMapInited) createAdminGpsMap(lat, lon);
 
-        // Find userName from active locations cache or use bikeId
-        const existing = adminActiveLocations.find(l => l.deviceId === d.deviceId);
-        const userName = existing ? existing.userName : (d.deviceId || bikeId);
-
-        // Update the marker for this bike
-        updateAdminMarkerFromMqtt(bikeId, userName, lat, lon, d.speed || 0, d.satellites || 0);
-
-        // Update stat cards with latest bike data
-        setAdminGpsOnline(Object.keys(adminMqttGpsCache).length);
-        document.getElementById('adminGpsLat').textContent  = lat.toFixed(5);
-        document.getElementById('adminGpsLon').textContent  = lon.toFixed(5);
-        document.getElementById('adminGpsSats').textContent = d.satellites || '—';
-        document.getElementById('adminGpsAge').textContent  = 'Just now';
-
-        // Update trail log table row
-        updateAdminTrailRow(bikeId, userName, lat, lon, d.speed||0, d.satellites||0, d.timestamp||Date.now());
-      }
-
-      // ── Bike online/offline status ────────────────────────────────────────
-      if (msgType === 'status') {
-        console.log(`[AdminMQTT] ${bikeId} status: ${d.online ? 'ONLINE' : 'OFFLINE'}`);
-        if (!d.online) {
-          // Remove marker when bike goes offline
-          if (adminGpsMarkers[bikeId]) {
-            adminGpsLeafMap.removeLayer(adminGpsMarkers[bikeId]);
-            delete adminGpsMarkers[bikeId];
-            delete adminMqttGpsCache[bikeId];
-          }
-          if (!Object.keys(adminMqttGpsCache).length) setAdminGpsOffline();
+        // Resolve userName from already-loaded allUsers list by rfidUid
+        let userName = bikeId;
+        if (d.deviceId) {
+          const u = allUsers.find(u => u.rfidUid && u.rfidUid.toLowerCase() === d.deviceId.toLowerCase());
+          if (u) userName = u.firstName + " " + u.lastName;
         }
+
+        addAdminMqttMarker(bikeId, userName, lat, lon, d.speed||0, d.satellites||0);
+        setAdminGpsOnline(Object.keys(adminMqttCache).length);
+
+        // Update stat cards
+        document.getElementById("adminGpsLat").textContent  = lat.toFixed(5);
+        document.getElementById("adminGpsLon").textContent  = lon.toFixed(5);
+        document.getElementById("adminGpsSats").textContent = d.satellites || "—";
+        document.getElementById("adminGpsAge").textContent  = "Just now";
+
+        // Update trail table
+        upsertTrailRow(bikeId, userName, lat, lon, d.speed||0, d.satellites||0, d.timestamp||Date.now());
       }
 
-      // ── RFID tap notification ─────────────────────────────────────────────
-      if (msgType === 'rfid') {
-        showToast(`💳 RFID tap on ${bikeId}: ${d.uid || '—'}`);
+      if (msgType === "status" && !d.online) {
+        if (adminGpsMarkers[bikeId]) { adminGpsLeafMap.removeLayer(adminGpsMarkers[bikeId]); delete adminGpsMarkers[bikeId]; }
+        delete adminMqttCache[bikeId];
+        if (!Object.keys(adminMqttCache).length && !adminActiveLocations.length) setAdminGpsOffline();
       }
-
-    } catch(e) { /* ignore malformed */ }
+    } catch(e) {}
   });
 }
 
-function updateAdminMarkerFromMqtt(bikeId, userName, lat, lon, speed, satellites) {
+function addAdminMqttMarker(bikeId, userName, lat, lon, speed, satellites) {
   if (!adminGpsMapInited) return;
-
-  const colors = ['#00e5a0','#0088ff','#7c5cfc','#ffab00','#ff5050'];
-  const idx    = bikeId.charCodeAt(bikeId.length - 1) % colors.length;
-  const color  = colors[idx];
-
+  const colors = ["#00e5a0","#0088ff","#7c5cfc","#ffab00","#ff5050"];
+  const color  = colors[bikeId.charCodeAt(bikeId.length-1) % colors.length];
+  const popupHtml = `<b>🚲 ${bikeId}</b><br><b>${userName}</b><br>Speed: ${speed.toFixed(1)} km/h<br>Sats: ${satellites}`;
   if (adminGpsMarkers[bikeId]) {
-    adminGpsMarkers[bikeId].setLatLng([lat, lon]);
-    adminGpsMarkers[bikeId].getPopup().setContent(
-      `<b>🚲 ${bikeId}</b><br><b>${userName}</b><br>Speed: ${speed.toFixed(1)} km/h<br>Sats: ${satellites}`
-    );
+    adminGpsMarkers[bikeId].setLatLng([lat,lon]);
+    adminGpsMarkers[bikeId].getPopup().setContent(popupHtml);
   } else {
     const icon = L.divIcon({
-      className: '',
-      html: `<div style="width:36px;height:36px;border-radius:50%;background:${color};border:3px solid #06090f;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 14px ${color}88;">🚲</div>`,
-      iconSize:   [36, 36],
-      iconAnchor: [18, 18]
+      className:"",
+      html:`<div style="width:36px;height:36px;border-radius:50%;background:${color};border:3px solid #06090f;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 14px ${color}88;">🚲</div>`,
+      iconSize:[36,36], iconAnchor:[18,18]
     });
-    adminGpsMarkers[bikeId] = L.marker([lat, lon], { icon })
-      .addTo(adminGpsLeafMap)
-      .bindPopup(`<b>🚲 ${bikeId}</b><br><b>${userName}</b><br>Speed: ${speed.toFixed(1)} km/h<br>Sats: ${satellites}`);
+    adminGpsMarkers[bikeId] = L.marker([lat,lon],{icon}).addTo(adminGpsLeafMap).bindPopup(popupHtml);
   }
 }
 
-function updateAdminTrailRow(bikeId, userName, lat, lon, speed, satellites, timestamp) {
-  const tbody = document.getElementById('adminGpsTrailBody');
-  // Update existing row or prepend new one
-  const existingRow = document.getElementById('trail-row-' + bikeId);
-  const html = `<td style="color:var(--text3);">${bikeId}</td>
+function upsertTrailRow(bikeId, userName, lat, lon, speed, satellites, timestamp) {
+  const tbody = document.getElementById("adminGpsTrailBody");
+  if (!tbody) return;
+  let row = document.getElementById("trail-row-" + bikeId);
+  const cells = `<td style="color:var(--text3);">${bikeId}</td>
     <td style="color:var(--accent);">${lat.toFixed(5)}</td>
     <td style="color:var(--accent2);">${lon.toFixed(5)}</td>
-    <td>${speed.toFixed(1)}</td>
-    <td>${satellites || '—'}</td>
-    <td style="color:var(--text3);font-size:12px;"><strong>${userName}</strong><br/>${new Date(timestamp).toLocaleTimeString()}</td>`;
-  if (existingRow) {
-    existingRow.innerHTML = html;
-  } else {
-    // Remove "no data" placeholder if present
-    if (tbody.querySelector('tr td[colspan]')) tbody.innerHTML = '';
-    const tr = document.createElement('tr');
-    tr.id = 'trail-row-' + bikeId;
-    tr.innerHTML = html;
-    tbody.prepend(tr);
-    document.getElementById('adminTrailCount').textContent =
-      Object.keys(adminMqttGpsCache).length + ' active vehicle(s)';
+    <td>${speed.toFixed(1)}</td><td>${satellites||"—"}</td>
+    <td style="color:var(--text3);font-size:12px;"><strong>${userName}</strong><br>${new Date(timestamp).toLocaleTimeString()}</td>`;
+  if (row) { row.innerHTML = cells; }
+  else {
+    if (tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
+    row = document.createElement("tr"); row.id = "trail-row-" + bikeId;
+    row.innerHTML = cells; tbody.prepend(row);
   }
+  document.getElementById("adminTrailCount").textContent = Object.keys(adminMqttCache).length + " active vehicle(s)";
 }
 
 function stopAdminGpsPoll() {

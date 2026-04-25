@@ -1637,7 +1637,11 @@ app.post('/api/payment/create-checkout-session', authMiddleware, async (req, res
     if (!user) return res.status(404).json({ message: 'User not found.' });
 
     // Use environment variable for deployment compatibility
-    const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5000';
+    // Derive frontend URL from request so Stripe always redirects back to the correct host.
+    // Works for Render (https://kuettrack.onrender.com), local, and any custom domain.
+    const FRONTEND_URL = process.env.FRONTEND_URL ||
+      (req.headers.origin ? req.headers.origin :
+        `${req.protocol}://${req.get('host')}`);
     console.log(`📍 Payment session: amount=৳${amount}, redirect=${FRONTEND_URL}/dashboard.html`);
 
     const session = await s.checkout.sessions.create({
