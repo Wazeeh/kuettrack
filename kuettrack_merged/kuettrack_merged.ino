@@ -390,27 +390,31 @@ void httpRfidAuth(String uid) {
   reqDoc["stationId"] = STATION_ID;
   char body[128]; serializeJson(reqDoc, body);
 
-  HTTPClient http;
   String url = String(API_BASE_URL) + "/api/rfid/scan";
-  http.begin(secureClient, url);
-  http.addHeader("Content-Type", "application/json");
-  http.setTimeout(10000);   // 10 s covers Render cold-start (~7-8 s)
+  int code = -1;
+  String respBody = "";
 
-  Serial.printf("[HTTP] POST %s uid=%s\n", url.c_str(), uid.c_str());
-  int code = http.POST(body);
-
-  if (code <= 0) {
+  // Retry once — covers Render free-tier cold start (~7-10 s wake-up)
+  for (int attempt = 1; attempt <= 2; attempt++) {
+    HTTPClient http;
+    http.begin(secureClient, url);
+    http.addHeader("Content-Type", "application/json");
+    http.setTimeout(15000);   // 15 s — safe margin for Render cold start
+    Serial.printf("[HTTP] POST %s uid=%s (attempt %d)\n", url.c_str(), uid.c_str(), attempt);
+    code = http.POST(body);
+    if (code > 0) { respBody = http.getString(); http.end(); break; }
     Serial.printf("[HTTP] Error: %s\n", http.errorToString(code).c_str());
     http.end();
+    if (attempt < 2) { lcdMsg("Waking server...", "Please wait"); drainGPS(); delay(3000); }
+  }
+
+  if (code <= 0) {
     lcdMsg("Server error", "Try again");
     feedbackAsync(false);
     bikeState = STATE_IDLE; currentRfidUid = "";
     gpsWait(1500); lcdMsg("KuetTrack Ready", "Tap RFID card");
     reinitRFID(); return;
   }
-
-  String respBody = http.getString();
-  http.end();
   Serial.printf("[HTTP] %d → %s\n", code, respBody.c_str());
 
   DynamicJsonDocument doc(512);
