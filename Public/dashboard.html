@@ -431,36 +431,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease;}
 
 /* ── MOBILE MENU TOGGLE ── */
-.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);-webkit-tap-highlight-color:transparent;}
-/* Sidebar overlay backdrop */
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:199;}
-.sidebar-overlay.open{display:block;}
+.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);}
 @media(max-width:900px){
-  body{overflow-x:hidden;}
-  .sidebar{
-    position:fixed;top:0;left:0;bottom:0;
-    transform:translateX(-100%);
-    height:100dvh;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-    display:flex;flex-direction:column;
-  }
-  .sidebar.open{transform:translateX(0);box-shadow:4px 0 32px rgba(0,0,0,0.5);}
-  .sidebar-nav{flex:1;overflow-y:auto;}
-  .sidebar-bottom{position:sticky;bottom:0;background:var(--bg2);border-top:1px solid var(--border);padding:12px;z-index:1;}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
   .menu-toggle{display:flex;align-items:center;justify-content:center;}
   .metrics-row{grid-template-columns:repeat(2,1fr);}
   .dash-grid{grid-template-columns:1fr;}
   .bikes-grid{grid-template-columns:1fr 1fr;}
   .ar-stats{grid-template-columns:1fr 1fr;}
   .profile-grid{grid-template-columns:1fr;}
-  .page{padding:20px 16px;}
-  .topbar{padding:12px 16px;}
-  .nav-item{padding:14px 12px;font-size:15px;min-height:48px;-webkit-tap-highlight-color:transparent;}
-  .wallet-chip{padding:8px 12px;}
-  .icon-btn{width:42px;height:42px;}
-  .modal{margin:16px;max-width:calc(100vw - 32px);}
-  .topup-grid{grid-template-columns:1fr 1fr;}
 }
 </style>
 </head>
@@ -483,39 +463,36 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
-    <button class="nav-item active" onclick="showPage('dashboard',this);closeSidebar()">
+    <button class="nav-item active" onclick="showPage('dashboard',this)">
       <span class="nav-icon">🏠</span> Dashboard
     </button>
-    <button class="nav-item" onclick="showPage('find',this);closeSidebar()">
+    <button class="nav-item" onclick="showPage('find',this)">
       <span class="nav-icon">🗺️</span> Find a Bike
     </button>
-    <button class="nav-item" onclick="showPage('myride',this);closeSidebar()">
+    <button class="nav-item" onclick="showPage('myride',this)">
       <span class="nav-icon">🚴</span> My Ride <span class="nav-badge" id="rideBadge" style="display:none;">Live</span>
     </button>
-    <button class="nav-item" onclick="showPage('gps',this);startGpsPoll();closeSidebar()">
+    <button class="nav-item" onclick="showPage('gps',this);startGpsPoll()">
       <span class="nav-icon">📡</span> Live GPS
       <span class="nav-badge" id="gpsBadge" style="display:none;background:rgba(0,136,255,0.18);color:var(--accent2);">Live</span>
     </button>
     <div class="nav-section-label" style="margin-top:8px;">Account</div>
-    <button class="nav-item" onclick="showPage('history',this);closeSidebar()">
+    <button class="nav-item" onclick="showPage('history',this)">
       <span class="nav-icon">📋</span> Ride History
     </button>
-    <button class="nav-item" onclick="showPage('wallet',this);closeSidebar()">
+    <button class="nav-item" onclick="showPage('wallet',this)">
       <span class="nav-icon">💳</span> Wallet
     </button>
-    <button class="nav-item" onclick="showPage('profile',this);closeSidebar()">
+    <button class="nav-item" onclick="showPage('profile',this)">
       <span class="nav-icon">👤</span> Profile
     </button>
   </nav>
   <div class="sidebar-bottom">
-    <button class="nav-item" onclick="logout()" style="color:var(--red);min-height:52px;font-size:15px;font-weight:600;">
+    <button class="nav-item" onclick="logout()" style="color:var(--red);">
       <span class="nav-icon">🚪</span> Logout
     </button>
   </div>
 </aside>
-
-<!-- SIDEBAR OVERLAY (tap to close on mobile) -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- MAIN -->
 <main class="main">
@@ -1006,16 +983,16 @@ let rideState = null; // { bikeId, station, startTime, timerInterval }
 let rideHistory = [];
 let transactions = [];
 
-// Demo bikes data
+// Demo bikes data — hardwareId must match BIKE_ID in kuettrack_merged.ino
 const BIKES = [
-  {id:'VT-001',station:'Central',type:'City Cruiser',battery:92,distance:4.2,status:'available'},
-  {id:'VT-007',station:'Central',type:'City Cruiser',battery:78,distance:12.1,status:'available'},
-  {id:'VT-012',station:'KU',type:'Mountain Bike',battery:55,distance:8.7,status:'available'},
-  {id:'VT-018',station:'KU',type:'City Cruiser',battery:88,distance:3.3,status:'available'},
-  {id:'VT-023',station:'North',type:'City Cruiser',battery:95,distance:1.1,status:'available'},
-  {id:'VT-031',station:'East',type:'City Cruiser',battery:40,distance:19.4,status:'available'},
-  {id:'VT-042',station:'North',type:'Mountain Bike',battery:67,distance:6.8,status:'available'},
-  {id:'VT-055',station:'East',type:'City Cruiser',battery:22,distance:28.5,status:'maintenance'},
+  {id:'VT-001',hardwareId:'BIKE-001',station:'Central',type:'City Cruiser',battery:92,distance:4.2,status:'available'},
+  {id:'VT-007',hardwareId:'BIKE-001',station:'Central',type:'City Cruiser',battery:78,distance:12.1,status:'available'},
+  {id:'VT-012',hardwareId:'BIKE-001',station:'KU',type:'Mountain Bike',battery:55,distance:8.7,status:'available'},
+  {id:'VT-018',hardwareId:'BIKE-001',station:'KU',type:'City Cruiser',battery:88,distance:3.3,status:'available'},
+  {id:'VT-023',hardwareId:'BIKE-001',station:'North',type:'City Cruiser',battery:95,distance:1.1,status:'available'},
+  {id:'VT-031',hardwareId:'BIKE-001',station:'East',type:'City Cruiser',battery:40,distance:19.4,status:'available'},
+  {id:'VT-042',hardwareId:'BIKE-001',station:'North',type:'Mountain Bike',battery:67,distance:6.8,status:'available'},
+  {id:'VT-055',hardwareId:'BIKE-001',station:'East',type:'City Cruiser',battery:22,distance:28.5,status:'maintenance'},
 ];
 
 // ─── INIT ─────────────────────────────────────────────
@@ -1176,20 +1153,7 @@ function showPage(id, btn) {
 }
 
 function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const ov = document.getElementById('sidebarOverlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('open');
-  // Prevent body scroll when sidebar is open on mobile
-  document.body.style.overflow = sb.classList.contains('open') ? 'hidden' : '';
-}
-
-function closeSidebar() {
-  const sb = document.getElementById('sidebar');
-  const ov = document.getElementById('sidebarOverlay');
-  sb.classList.remove('open');
-  ov.classList.remove('open');
-  document.body.style.overflow = '';
+  document.getElementById('sidebar').classList.toggle('open');
 }
 
 // ─── BIKE RENDERING ──────────────────────────────────
@@ -1211,7 +1175,7 @@ function renderBikes(filter) {
         <div class="bstat"><div class="bstat-val">${b.type==='City Cruiser'?'🏙️':'⛰️'}</div><div class="bstat-label">${b.type}</div></div>
       </div>
       ${b.status==='available'
-        ? `<button class="bike-select-btn" onclick="openConfirm('${b.id}','${b.station}')">Select Bike →</button>`
+        ? `<button class="bike-select-btn" onclick="openConfirm('${b.id}','${b.station}','${b.hardwareId||'BIKE-001'}')">Select Bike →</button>`
         : `<button class="bike-select-btn" disabled>${b.status==='busy'?'In Use':'Under Maintenance'}</button>`}
     </div>
   `).join('');
@@ -1226,9 +1190,9 @@ function filterStation(s){
 
 // ─── CONFIRM / START RIDE ────────────────────────────
 let pendingBike = null;
-function openConfirm(bikeId, station) {
+function openConfirm(bikeId, station, hardwareId) {
   if(rideState){showToast('⚠️ You already have an active ride!','var(--amber)');return;}
-  pendingBike={bikeId,station};
+  pendingBike={bikeId, station, hardwareId: hardwareId || 'BIKE-001'};
   document.getElementById('confirmBikeId').textContent = '#'+bikeId;
   document.getElementById('confirmStation').textContent = station+' Station';
   const bal = currentUser.walletBalance||0;
@@ -1247,11 +1211,14 @@ async function startRide() {
 
   try {
     const token = localStorage.getItem('kuettrack_token');
+    // CRITICAL: send hardwareId (BIKE-001) not the display ID (VT-001)
+    // ESP32 polls /api/bikes/BIKE-001/command — bikeId must match exactly
+    const hardwareId = pendingBike.hardwareId || 'BIKE-001';
     const res = await fetch(`${API}/api/rides/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        bikeId:    pendingBike.bikeId || 'BIKE-001',
+        bikeId:    hardwareId,
         stationId: 'STATION-001'
       })
     });
@@ -1282,6 +1249,7 @@ async function startRide() {
     updateRideUI();
     rideState.timerInterval = setInterval(tickRide,1000);
     startRideStatusPoll();
+    startGpsPoll(); // immediately start streaming GPS to all maps
     showToast('🚴 Ride started! Tap RFID card on bike to unlock, then enjoy your trip!');
 
   } catch(err) {
@@ -1519,11 +1487,10 @@ async function initiateStripeTopup(amt) {
 
     if (res.status === 503) {
       showPaymentError(
-        '💳 Stripe not configured on Render',
-        'Your Stripe secret key is missing or invalid on Render.<br><br>' +
-        'Go to <b>Render Dashboard → Your Service → Environment</b> and add:<br><br>' +
-        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;word-break:break-all;">STRIPE_SECRET_KEY = sk_live_... (or sk_test_...)</code>' +
-        '<br>Then click <b>Save Changes</b> — Render will redeploy automatically.'
+        '💳 Stripe not configured',
+        'Add your Stripe key to <code>.env</code>, then restart the server:<br><br>' +
+        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">STRIPE_SECRET_KEY=sk_test_...</code>' +
+        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">npm install stripe</code>'
       );
       return;
     }
