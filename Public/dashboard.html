@@ -1481,12 +1481,12 @@ function selectTopup(amt, el) {
   el.classList.add('selected');
   const btn = document.getElementById('topupConfirmBtn');
   btn.style.display = '';
-  btn.textContent = `✅ Add ৳${amt} to Wallet`;
+  btn.textContent = `💳 Pay ৳${amt} via Stripe`;
 }
 
 function confirmTopup() {
   if (!selectedTopupAmount) return;
-  performTopup(selectedTopupAmount);
+  initiateStripeTopup(selectedTopupAmount);
   document.querySelectorAll('#topupGrid .topup-option').forEach(o => o.classList.remove('selected'));
   document.getElementById('topupConfirmBtn').style.display = 'none';
   selectedTopupAmount = 0;
@@ -1498,7 +1498,7 @@ function selectModalTopup(amt, el) {
   el.classList.add('selected');
   const btn = document.getElementById('modalTopupBtn');
   btn.disabled = false; btn.style.opacity = '1';
-  btn.textContent = `✅ Add ৳${amt} to Wallet`;
+  btn.textContent = `💳 Pay ৳${amt} via Stripe`;
 }
 
 function doTopup() {
@@ -1509,13 +1509,58 @@ function doTopup() {
   document.querySelectorAll('#modalTopupGrid .topup-option').forEach(o => o.classList.remove('selected'));
   const btn = document.getElementById('modalTopupBtn');
   btn.disabled = true; btn.style.opacity = '0.4'; btn.textContent = 'Select an amount';
-  performTopup(amt);
+  initiateStripeTopup(amt);
 }
 
-// Direct wallet top-up — calls /api/wallet/topup (no Stripe required)
-async function performTopup(amt) {
+// Stripe Checkout — redirects to Stripe hosted payment page
+async function initiateStripeTopup(amt) {
   const token = localStorage.getItem('kuettrack_token');
-  showToast('⏳ Processing top-up...');
+  showToast('⏳ Connecting to Stripe...');
+  try {
+    const res = await fetch(`${API}/api/payment/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ amount: amt })
+    });
+
+    // Handle non-JSON (server error pages)
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      showPaymentError('❌ Server Error', 'Unexpected response from server. Check Render logs.');
+      return;
+    }
+
+    const data = await res.json();
+
+    if (res.status === 503) {
+      // Stripe not configured — fall back to direct topup
+      showToast('⚠️ Stripe not configured — using direct top-up.');
+      await directTopup(amt);
+      return;
+    }
+
+    if (!res.ok) {
+      showPaymentError('❌ Payment Error', data.message || `Server error ${res.status}`);
+      return;
+    }
+
+    if (!data.url) {
+      showPaymentError('❌ No Redirect URL', 'Payment session created but no Stripe URL returned.');
+      return;
+    }
+
+    // ✅ Redirect to Stripe Checkout
+    window.location.href = data.url;
+
+  } catch (e) {
+    console.error('Stripe topup error:', e);
+    showPaymentError('❌ Network Error', 'Could not reach payment server. Check your internet connection.');
+  }
+}
+
+// Fallback: direct wallet credit (used if Stripe not configured on server)
+async function directTopup(amt) {
+  const token = localStorage.getItem('kuettrack_token');
   try {
     const res = await fetch(`${API}/api/wallet/topup`, {
       method: 'POST',
@@ -1523,22 +1568,16 @@ async function performTopup(amt) {
       body: JSON.stringify({ amount: amt })
     });
     const data = await res.json();
-    if (!res.ok) {
-      showToast('❌ ' + (data.message || 'Top-up failed. Try again.'));
-      return;
-    }
-    // Update balance from server response
+    if (!res.ok) { showToast('❌ ' + (data.message || 'Top-up failed.')); return; }
     currentUser.walletBalance = data.newBalance;
     localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
     populateUI(currentUser);
-    // Add to local transaction list
     const txn = { type: 'credit', title: 'Wallet Top-Up', date: new Date().toLocaleString(), amount: amt };
     transactions.unshift(txn);
     renderTransactions();
     showToast(`✅ ৳${amt} added! New balance: ৳${data.newBalance}`);
   } catch (e) {
-    console.error('Top-up error:', e);
-    showToast('❌ Network error. Check connection and try again.');
+    showToast('❌ Network error.');
   }
 }
 
@@ -1548,13 +1587,70 @@ function showPaymentError(title, detail) {
   document.getElementById('paymentErrorModal').classList.add('show');
 }
 
-// No-op — kept for compatibility (Stripe return params no longer used)
+// Handle return from Stripe Checkout (success or cancel)
 async function checkStripeReturn() {
   const params = new URLSearchParams(window.location.search);
+
   if (params.get('topup') === 'cancel') {
-    showToast('⚠️ Top-up cancelled.');
+    showToast('⚠️ Payment cancelled.');
     window.history.replaceState({}, '', window.location.pathname);
+    return;
   }
+
+  if (params.get('topup') !== 'success') return;
+
+  const amt       = parseInt(params.get('amount') || '0', 10);
+  const sessionId = params.get('session_id') || '';
+  const prt       = params.get('prt') || '';   // payment-return token
+  const token     = localStorage.getItem('kuettrack_token');
+
+  // If a short-lived payment-return token was embedded in the URL, use it
+  // to restore the session (handles the case where localStorage was cleared).
+  if (prt) {
+    localStorage.setItem('kuettrack_token', prt);
+  }
+
+  showToast('✅ Payment successful! Updating balance...');
+
+  // Wait briefly for Stripe webhook to credit the wallet
+  await new Promise(r => setTimeout(r, 1500));
+
+  try {
+    // Verify the session and get updated balance
+    if (sessionId) {
+      const vRes = await fetch(`${API}/api/payment/verify-session/${sessionId}`, {
+        headers: { Authorization: `Bearer ${prt || token}` }
+      });
+      if (vRes.ok) {
+        const vData = await vRes.json();
+        if (vData.paid) {
+          currentUser.walletBalance = vData.walletBalance;
+          localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+          populateUI(currentUser);
+          showToast(`✅ ৳${amt} added! Balance: ৳${vData.walletBalance}`);
+          // Save transaction locally
+          const txn = { type: 'credit', title: 'Wallet Top-Up (Stripe)', date: new Date().toLocaleString(), amount: amt };
+          transactions.unshift(txn);
+          renderTransactions();
+        }
+      }
+    }
+
+    // Always refresh user from server to get latest balance
+    const me = await fetch(`${API}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${prt || token}` }
+    });
+    if (me.ok) {
+      const u = await me.json();
+      currentUser.walletBalance = u.walletBalance;
+      localStorage.setItem('kuettrack_user', JSON.stringify(currentUser));
+      populateUI(currentUser);
+    }
+  } catch (e) {
+    console.warn('Balance refresh after payment failed:', e);
+  }
+
+  window.history.replaceState({}, '', window.location.pathname);
 }
 
 // ─── PROFILE SAVE ────────────────────────────────────
