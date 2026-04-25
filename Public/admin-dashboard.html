@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin Dashboard — KuetTrack</title>
+<title>Admin — KuetTrack</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
@@ -12,8 +12,7 @@
   --bg:#06090f;--bg2:#0c1018;--bg3:#111620;
   --surface:#161c28;--surface2:#1d2535;--surface3:#222b3a;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18);
-  --accent:#00e5a0;--accent2:#0088ff;--accent3:#7c5cfc;
-  --amber:#ffab00;--red:#ff5050;--green:#4caf50;
+  --accent:#00e5a0;--accent2:#0088ff;--accent3:#7c5cfc;--amber:#ffab00;--red:#ff5050;
   --text:#f0f4ff;--text2:#8b95b0;--text3:#5a6175;
   --ff:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
   --r:14px;--r-sm:10px;--r-lg:20px;
@@ -25,1709 +24,1394 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
 
 /* ── SIDEBAR ── */
-.sidebar{width:260px;min-width:260px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:200;}
-.sidebar-logo{padding:26px 22px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);font-family:var(--ff);font-size:19px;font-weight:800;}
-.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent3),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
-.logo-green{color:var(--accent);}
-.admin-tag{margin-left:auto;background:rgba(124,92,252,0.15);border:1px solid rgba(124,92,252,0.25);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--accent3);font-weight:700;letter-spacing:0.5px;}
-.sidebar-admin{padding:18px 20px 14px;border-bottom:1px solid var(--border);}
-.admin-card{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;}
-.admin-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(124,92,252,0.25),rgba(0,136,255,0.25));border:2px solid rgba(124,92,252,0.4);display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-size:14px;font-weight:700;color:var(--accent3);flex-shrink:0;}
-.admin-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.admin-role{font-size:11px;color:var(--accent3);}
-.sidebar-nav{padding:14px 10px;flex:1;}
-.nav-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);padding:8px 12px 5px;font-weight:600;}
+.sidebar{
+  width:260px;min-width:260px;background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  transition:transform 0.3s;z-index:200;
+}
+.sidebar-logo{
+  padding:28px 24px 20px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+  font-family:var(--ff);font-size:20px;font-weight:800;
+}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.sidebar-logo .green{color:var(--accent);}
+.admin-badge-sb{
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  background:rgba(255,171,0,0.15);color:var(--amber);border:1px solid rgba(255,171,0,0.25);
+  border-radius:100px;padding:2px 8px;margin-left:auto;
+}
+.sidebar-user{padding:20px 20px 16px;border-bottom:1px solid var(--border);}
+.user-card{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;}
+.user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(255,171,0,0.2),rgba(255,80,80,0.15));border:2px solid rgba(255,171,0,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-size:15px;font-weight:700;color:var(--amber);flex-shrink:0;}
+.user-info{min-width:0;}
+.user-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-plan{font-size:11px;color:var(--text3);margin-top:2px;}
+.sidebar-nav{padding:16px 12px;flex:1;}
+.nav-section-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);padding:8px 12px 6px;font-weight:600;}
 .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-sm);color:var(--text2);font-size:14px;cursor:pointer;transition:background 0.2s,color 0.2s;text-decoration:none;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;font-family:var(--fb);}
 .nav-item:hover{background:var(--surface);color:var(--text);}
-.nav-item.active{background:rgba(124,92,252,0.1);color:var(--accent3);border:1px solid rgba(124,92,252,0.15);}
-.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
-.nav-count{margin-left:auto;background:var(--accent3);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
-.nav-count.red{background:var(--red);}
-.nav-count.amber{background:var(--amber);color:#1a1200;}
-.sidebar-bottom{padding:14px 10px;border-top:1px solid var(--border);}
+.nav-item.active{background:rgba(0,229,160,0.1);color:var(--accent);border:1px solid rgba(0,229,160,0.15);}
+.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--accent);color:#06090f;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
+.nav-badge-live{background:rgba(255,80,80,0.18);color:var(--red);}
+.sidebar-bottom{padding:16px 12px;border-top:1px solid var(--border);}
 
 /* ── MAIN ── */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;}
-.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:14px 32px;background:rgba(6,9,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
-.topbar-left{display:flex;align-items:center;gap:14px;}
-.topbar-title{font-family:var(--ff);font-size:17px;font-weight:700;letter-spacing:-0.3px;}
-.topbar-right{display:flex;align-items:center;gap:10px;}
-.tb-chip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:7px 14px;font-size:13px;cursor:pointer;transition:background 0.2s;}
-.tb-chip:hover{background:var(--surface2);}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden;}
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 36px;background:rgba(6,9,15,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.topbar-left{display:flex;align-items:center;gap:16px;}
+.topbar-title{font-family:var(--ff);font-size:18px;font-weight:700;letter-spacing:-0.5px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.clock-chip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:7px 14px;font-size:13px;}
+.clock-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.5);}}
-.icon-btn{width:36px;height:36px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;transition:background 0.2s;position:relative;}
-.icon-btn:hover{background:var(--surface2);}
+.refresh-btn{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:7px 14px;font-size:13px;cursor:pointer;font-family:var(--fb);color:var(--text);transition:background 0.2s;}
+.refresh-btn:hover{background:var(--surface2);}
+.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--text);font-size:18px;line-height:1;}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;backdrop-filter:blur(2px);}
+.sidebar-backdrop.show{display:block;}
 
-/* ── PAGES ── */
-.page{padding:28px 32px;display:none;animation:fadeUp 0.4s ease both;}
+/* ── PAGE ── */
+.page{padding:32px 36px;display:none;}
 .page.active{display:block;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
-/* ── METRICS ── */
-.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;transition:border-color 0.2s,transform 0.2s;cursor:default;position:relative;overflow:hidden;}
+/* ── METRIC CARDS ── */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:22px 20px;transition:border-color 0.2s,transform 0.2s;cursor:default;position:relative;overflow:hidden;}
 .metric-card:hover{border-color:var(--border2);transform:translateY(-2px);}
-.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0.6;}
-.mc-purple::before{background:linear-gradient(90deg,transparent,var(--accent3),transparent);}
-.mc-green::before{background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity 0.3s;}
+.metric-card:hover::before{opacity:1;}
+.mc-accent::before{background:linear-gradient(90deg,transparent,var(--accent),transparent);}
 .mc-blue::before{background:linear-gradient(90deg,transparent,var(--accent2),transparent);}
 .mc-amber::before{background:linear-gradient(90deg,transparent,var(--amber),transparent);}
 .mc-red::before{background:linear-gradient(90deg,transparent,var(--red),transparent);}
-.metric-icon{font-size:22px;margin-bottom:12px;}
-.metric-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-.metric-val{font-family:var(--ff);font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1;}
-.metric-change{font-size:12px;margin-top:6px;}
-.up{color:var(--accent);}
-.down{color:var(--red);}
-.neutral{color:var(--text3);}
+.metric-icon{font-size:28px;margin-bottom:12px;}
+.metric-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.metric-val{font-family:var(--ff);font-size:32px;font-weight:800;letter-spacing:-1.5px;line-height:1;}
+.metric-sub{font-size:12px;color:var(--text3);margin-top:6px;}
 
 /* ── CARD ── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px;}
-.card-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border);}
-.card-title{font-family:var(--ff);font-size:15px;font-weight:700;letter-spacing:-0.3px;}
-.card-body{padding:20px 22px;}
-.card-action{font-size:13px;color:var(--accent3);cursor:pointer;text-decoration:none;background:none;border:none;font-family:var(--fb);}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--border);}
+.card-title{font-family:var(--ff);font-size:16px;font-weight:700;letter-spacing:-0.3px;display:flex;align-items:center;gap:8px;}
+.card-body{padding:20px 24px;}
+.card-action{font-size:13px;color:var(--accent);cursor:pointer;text-decoration:none;border:none;background:none;font-family:var(--fb);}
 .card-action:hover{text-decoration:underline;}
 
-/* ── GRID ── */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+/* ── LIVE MAP ── */
+#adminLiveMap{width:100%;height:420px;border-radius:0 0 14px 14px;}
+.map-status-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);
+  font-size:12px;color:var(--text3);
+}
+.map-status-bar .left{display:flex;align-items:center;gap:16px;}
+.status-item{display:flex;align-items:center;gap:6px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background 0.4s;}
+.status-dot.online{background:var(--accent);}
+.status-dot.active{background:var(--red);animation:pulse 2s infinite;}
+.map-waiting{
+  width:100%;height:420px;border-radius:0 0 14px 14px;
+  background:var(--surface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+.map-waiting-icon{font-size:56px;}
+.map-waiting h3{font-family:var(--ff);font-size:18px;}
+.map-waiting p{font-size:13px;color:var(--text3);max-width:320px;text-align:center;}
 
-/* ── TABLE ── */
+/* Active Rider sidebar panel */
+.active-riders-panel{display:flex;flex-direction:column;gap:10px;}
+.rider-card{
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);
+  padding:14px 16px;cursor:pointer;transition:border-color 0.2s,background 0.2s;
+}
+.rider-card:hover{border-color:var(--accent);background:rgba(0,229,160,0.03);}
+.rider-card.selected{border-color:var(--accent);background:rgba(0,229,160,0.05);}
+.rider-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.rider-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(0,229,160,0.2),rgba(0,136,255,0.15));border:2px solid rgba(0,229,160,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;}
+.rider-name{font-size:14px;font-weight:600;}
+.rider-email{font-size:11px;color:var(--text3);}
+.live-tag{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--red);background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.2);border-radius:100px;padding:3px 8px;}
+.live-tag-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:pulse 1.5s infinite;}
+.rider-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.rider-stat{background:rgba(0,0,0,0.2);border-radius:6px;padding:6px 8px;}
+.rider-stat-val{font-size:13px;font-weight:600;color:var(--accent);}
+.rider-stat-label{font-size:10px;color:var(--text3);}
+.no-riders{padding:36px 20px;text-align:center;color:var(--text3);font-size:14px;}
+.no-riders-icon{font-size:40px;margin-bottom:10px;}
+
+/* ── DASH GRID ── */
+.dash-grid{display:grid;grid-template-columns:1fr 300px;gap:20px;}
+
+/* ── TABLE STYLES ── */
 .data-table{width:100%;border-collapse:collapse;}
-.data-table th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:0 14px 12px;text-align:left;font-weight:600;white-space:nowrap;}
-.data-table td{padding:13px 14px;border-top:1px solid var(--border);font-size:13px;vertical-align:middle;}
-.data-table tr:hover td{background:rgba(255,255,255,0.02);}
-.data-table tbody tr:last-child td{border-bottom:none;}
-.badge{padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap;}
-.b-green{background:rgba(0,229,160,0.12);color:var(--accent);}
-.b-red{background:rgba(255,80,80,0.1);color:var(--red);}
-.b-amber{background:rgba(255,171,0,0.1);color:var(--amber);}
-.b-blue{background:rgba(0,136,255,0.12);color:var(--accent2);}
-.b-purple{background:rgba(124,92,252,0.12);color:var(--accent3);}
-.b-gray{background:rgba(255,255,255,0.06);color:var(--text3);}
-.action-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--fb);transition:opacity 0.2s;}
-.ab-blue{background:rgba(0,136,255,0.15);color:var(--accent2);}
-.ab-red{background:rgba(255,80,80,0.12);color:var(--red);}
-.ab-green{background:rgba(0,229,160,0.12);color:var(--accent);}
-.ab-purple{background:rgba(124,92,252,0.12);color:var(--accent3);}
-.ab-amber{background:rgba(255,171,0,0.1);color:var(--amber);}
-.action-btn:hover{opacity:0.75;}
-.user-cell{display:flex;align-items:center;gap:10px;}
-.user-mini-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.data-table th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:0 16px 12px;text-align:left;font-weight:600;}
+.data-table td{padding:14px 16px;border-top:1px solid var(--border);font-size:14px;vertical-align:middle;}
+.data-table tr:hover td{background:rgba(255,255,255,0.015);}
+.user-row-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,rgba(0,229,160,0.2),rgba(0,136,255,0.15));display:flex;align-items:center;justify-content:center;font-family:var(--ff);font-size:11px;font-weight:700;color:var(--accent);}
+.plan-badge{display:inline-block;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
+.plan-basic{background:rgba(255,255,255,0.06);color:var(--text3);}
+.plan-monthly{background:rgba(0,229,160,0.12);color:var(--accent);}
+.plan-student{background:rgba(0,136,255,0.12);color:var(--accent2);}
+.ride-status{padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;}
+.rs-active{background:rgba(255,80,80,0.12);color:var(--red);}
+.rs-completed{background:rgba(0,229,160,0.1);color:var(--accent);}
 
-/* ── SEARCH & FILTER ── */
-.search-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 16px;margin-bottom:14px;}
-.search-bar input{background:none;border:none;color:var(--text);font-family:var(--fb);font-size:14px;outline:none;flex:1;}
-.search-bar input::placeholder{color:var(--text3);}
-.filter-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
-.ftab{padding:7px 16px;border-radius:100px;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--fb);font-size:13px;cursor:pointer;transition:all 0.2s;}
-.ftab:hover{background:var(--surface);color:var(--text);}
-.ftab.active{background:rgba(124,92,252,0.12);border-color:rgba(124,92,252,0.3);color:var(--accent3);}
+/* ── FORM ELEMENTS ── */
+.form-group{margin-bottom:18px;}
+.form-label{font-size:13px;color:var(--text2);margin-bottom:8px;display:block;}
+.form-input{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px 16px;color:var(--text);font-family:var(--fb);font-size:14px;transition:border-color 0.2s;outline:none;}
+.form-input:focus{border-color:var(--accent);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a6175'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--r-sm);font-family:var(--fb);font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s,transform 0.15s;border:none;text-decoration:none;}
+.btn:hover{opacity:0.85;transform:translateY(-1px);}
+.btn-primary{background:var(--accent);color:#06090f;}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-sm{padding:7px 14px;font-size:12px;}
 
-/* ── PROGRESS ── */
-.prog-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:6px;}
-.prog-fill{height:100%;border-radius:3px;transition:width 1s ease;}
-
-/* ── RFID ASSIGN ── */
-.rfid-form{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;}
-.form-label-s{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;}
-.form-input-s{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 14px;color:var(--text);font-family:var(--fb);font-size:13px;outline:none;transition:border-color 0.2s;}
-.form-input-s:focus{border-color:var(--accent3);}
-.assign-btn{padding:10px 20px;border-radius:var(--r-sm);background:var(--accent3);color:#fff;border:none;font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity 0.2s;}
-.assign-btn:hover{opacity:0.85;}
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:32px;right:32px;z-index:9999;
+  background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);
+  padding:14px 20px;font-size:14px;max-width:340px;
+  transform:translateY(20px);opacity:0;transition:all 0.3s;
+  display:flex;align-items:center;gap:10px;
+}
+.toast.show{transform:translateY(0);opacity:1;}
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;}
 .modal-overlay.show{opacity:1;pointer-events:all;}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:32px;width:100%;max-width:520px;transform:translateY(16px) scale(0.97);transition:transform 0.25s;max-height:90vh;overflow-y:auto;}
-.modal-overlay.show .modal{transform:translateY(0) scale(1);}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
-.modal-title{font-family:var(--ff);font-size:20px;font-weight:800;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:36px;width:100%;max-width:480px;transform:translateY(20px) scale(0.97);transition:transform 0.25s;}
+.modal-overlay.show .modal{transform:none;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.modal-title{font-family:var(--ff);font-size:18px;font-weight:700;}
 .modal-close{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;}
 .modal-close:hover{color:var(--text);}
-.modal-field{margin-bottom:16px;}
-.modal-label{font-size:13px;color:var(--text2);margin-bottom:7px;display:block;}
-.modal-input{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px 14px;color:var(--text);font-family:var(--fb);font-size:14px;outline:none;transition:border-color 0.2s;}
-.modal-input:focus{border-color:var(--accent3);}
-.modal-input:disabled{opacity:0.6;cursor:default;}
-.modal-actions{display:flex;gap:10px;margin-top:22px;justify-content:flex-end;}
-.modal-btn{padding:10px 20px;border-radius:var(--r-sm);font-family:var(--fb);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:opacity 0.2s;}
-.modal-btn:hover{opacity:0.8;}
-.mb-primary{background:var(--accent3);color:#fff;}
-.mb-secondary{background:var(--surface2);color:var(--text2);}
-.mb-danger{background:rgba(255,80,80,0.15);color:var(--red);border:1px solid rgba(255,80,80,0.25);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:28px;right:28px;z-index:999;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:13px 20px;font-size:14px;font-weight:500;transform:translateY(80px);opacity:0;transition:all 0.35s cubic-bezier(.22,.68,0,1.2);pointer-events:none;max-width:340px;}
-.toast.show{transform:translateY(0);opacity:1;}
+/* ── GPS TRAIL ── */
+/* Leaflet custom overrides */
+.leaflet-container{background:#0c1018;}
+.leaflet-tile{filter:brightness(0.7) saturate(0.9);}
 
-/* ── RFID LIVE CARD ── */
-.rfid-live-card{background:linear-gradient(135deg,rgba(124,92,252,0.08),rgba(0,136,255,0.05));border:1px solid rgba(124,92,252,0.2);border-radius:var(--r);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;}
-.rfid-live-icon{font-size:36px;}
-.rfid-live-content{flex:1;}
-.rfid-live-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent3);margin-bottom:4px;}
-.rfid-live-name{font-family:var(--ff);font-size:22px;font-weight:800;margin-bottom:2px;}
-.rfid-live-uid{font-size:13px;color:var(--text2);}
-.rfid-live-time{font-size:12px;color:var(--text3);}
-.rfid-pulse{width:12px;height:12px;border-radius:50%;background:var(--accent3);animation:rfidPulse 1.5s infinite;}
-@keyframes rfidPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,252,0.5);}50%{box-shadow:0 0 0 8px rgba(124,92,252,0);}}
-
-/* ── STATS ── */
-.stat-info{display:flex;flex-direction:column;gap:14px;}
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
-.stat-row:last-child{border-bottom:none;}
-.stat-key{font-size:13px;color:var(--text2);}
-.stat-val{font-size:14px;font-weight:600;}
-
-/* ── PAGINATION ── */
-.pagination{display:flex;align-items:center;gap:6px;padding:16px 0 4px;justify-content:flex-end;}
-.pg-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.2s;}
-.pg-btn:hover:not(:disabled){background:var(--surface2);color:var(--text);}
-.pg-btn.active{background:rgba(124,92,252,0.15);border-color:rgba(124,92,252,0.3);color:var(--accent3);}
-.pg-btn:disabled{opacity:0.35;cursor:not-allowed;}
-.pg-info{font-size:12px;color:var(--text3);margin-right:8px;}
-
-/* ── ALERT ── */
-.alert-row{display:flex;flex-direction:column;gap:10px;}
-.alert-item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;transition:border-color 0.2s;}
-.alert-item:hover{border-color:var(--border2);}
-.alert-item.critical{border-color:rgba(255,80,80,0.25);background:rgba(255,80,80,0.04);}
-.alert-item.warning{border-color:rgba(255,171,0,0.2);}
-.alert-icon-wrap{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.ai-red{background:rgba(255,80,80,0.12);}
-.ai-amber{background:rgba(255,171,0,0.1);}
-.ai-blue{background:rgba(0,136,255,0.1);}
-.ai-green{background:rgba(0,229,160,0.1);}
-.alert-text{flex:1;}
-.alert-title{font-size:13px;font-weight:600;margin-bottom:2px;}
-.alert-time{font-size:11px;color:var(--text3);}
-.alert-resolve{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:none;color:var(--text2);font-family:var(--fb);transition:all 0.2s;}
-.alert-resolve:hover{background:var(--surface2);color:var(--text);}
-
-/* ── CHART ── */
-.chart-wrap{position:relative;height:200px;display:flex;align-items:flex-end;gap:6px;padding:0 4px 28px;}
-.chart-bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.chart-bar{width:100%;border-radius:4px 4px 0 0;transition:height 1s ease,opacity 0.2s;}
-.chart-bar:hover{opacity:0.75;}
-.chart-label{font-size:10px;color:var(--text3);text-align:center;white-space:nowrap;}
-
-/* ── LOADER ── */
-.loader{display:inline-block;width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent3);border-radius:50%;animation:spin 0.7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.loading-row td{text-align:center;padding:40px!important;color:var(--text3);}
-
-/* ── USER DETAIL TABS ── */
-.modal-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:14px;}
-.mtab{padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--text2);font-family:var(--fb);transition:all 0.2s;}
-.mtab.active{background:rgba(124,92,252,0.12);color:var(--accent3);}
-
-/* ── RFID LIVE MONITOR ── */
-.rfid-monitor{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:20px;}
-.rfid-scan-ring{width:80px;height:80px;border-radius:50%;border:3px solid rgba(124,92,252,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;}
-.rfid-scan-ring::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid transparent;border-top-color:var(--accent3);animation:spin 2s linear infinite;}
-.rfid-monitor.detected .rfid-scan-ring::before{border-top-color:var(--accent);animation:none;}
-.rfid-monitor.detected{border-color:rgba(0,229,160,0.25);background:rgba(0,229,160,0.03);}
+/* Rider popup custom */
+.rider-popup{min-width:180px;}
+.rider-popup h4{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;color:#00e5a0;}
+.rider-popup p{font-size:12px;color:#8b95b0;margin:2px 0;}
+.rider-popup .speed{font-size:13px;font-weight:600;color:#f0f4ff;margin-top:6px;}
 
 /* ── RESPONSIVE ── */
+@media(max-width:1100px){.dash-grid{grid-template-columns:1fr;}}
 @media(max-width:900px){
-  .sidebar{display:none;}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:200;}
+  .sidebar.open{transform:translateX(0);}
+  .menu-toggle{display:flex;align-items:center;justify-content:center;}
   .metrics-row{grid-template-columns:repeat(2,1fr);}
-  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .page{padding:20px 16px;}
+  .topbar{padding:12px 16px;}
 }
-
-/* ── MAP ── */
-.map-container{height:360px;background:var(--bg3);border-radius:var(--r-sm);position:relative;overflow:hidden;}
-.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,160,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.03) 1px,transparent 1px);background-size:40px 40px;}
-.map-road-h{position:absolute;height:2px;background:rgba(255,255,255,0.05);left:0;right:0;}
-.map-road-v{position:absolute;width:2px;background:rgba(255,255,255,0.05);top:0;bottom:0;}
-.map-station{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid #06090f;cursor:pointer;transition:transform 0.2s;z-index:2;}
-.map-station:hover{transform:scale(1.5);}
-.map-station.few{background:var(--amber);}
-.map-station.empty{background:var(--red);}
-.map-legend{position:absolute;bottom:12px;left:12px;background:rgba(6,9,15,0.88);backdrop-filter:blur(10px);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;display:flex;gap:12px;flex-wrap:wrap;}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
-.legend-dot{width:7px;height:7px;border-radius:50%;}
+@media(max-width:480px){
+  .metrics-row{grid-template-columns:1fr 1fr;}
+  .metric-val{font-size:22px;}
+}
 </style>
 </head>
 <body>
 
-<!-- ── SIDEBAR ── -->
-<aside class="sidebar">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-icon">🚲</div>
-    Kuet<span class="logo-green">Track</span>
-    <span class="admin-tag">ADMIN</span>
+    <div class="logo-icon"><span>🚲</span></div>
+    Kuet<span class="green">Track</span>
+    <span class="admin-badge-sb">Admin</span>
   </div>
-  <div class="sidebar-admin">
-    <div class="admin-card">
-      <div class="admin-avatar" id="adminAvatar">AD</div>
-      <div>
-        <div class="admin-name" id="adminName">Administrator</div>
-        <div class="admin-role">🛡️ Super Admin</div>
+  <div class="sidebar-user">
+    <div class="user-card">
+      <div class="user-avatar" id="sidebarAvatar">SA</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarName">Admin</div>
+        <div class="user-plan">Super Admin</div>
       </div>
     </div>
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-label">Main</div>
-    <button class="nav-item active" onclick="showPage('overview',this)"><span class="nav-icon">📊</span>Overview</button>
-    <button class="nav-item" onclick="showPage('users',this)"><span class="nav-icon">👥</span>Users<span class="nav-count" id="navUserCount">—</span></button>
-    <button class="nav-item" onclick="showPage('rides',this)"><span class="nav-icon">🛣️</span>All Rides<span class="nav-count" id="navRideCount">—</span></button>
-    <div class="nav-label" style="margin-top:8px;">Management</div>
-    <button class="nav-item" onclick="showPage('rfid',this)"><span class="nav-icon">💳</span>RFID Management</button>
-    <button class="nav-item" onclick="showPage('rfid-history',this)"><span class="nav-icon">🕐</span>RFID History</button>
-    <button class="nav-item" onclick="showPage('gps',this);startAdminGpsPoll()"><span class="nav-icon">📡</span>Live GPS Tracking</button>
-    <button class="nav-item" onclick="showPage('analytics',this)"><span class="nav-icon">📈</span>Analytics</button>
+    <div class="nav-section-label">Dashboard</div>
+    <button class="nav-item active" onclick="showPage('overview',this)">
+      <span class="nav-icon">📊</span> Overview
+    </button>
+    <button class="nav-item" onclick="showPage('livemap',this)">
+      <span class="nav-icon">🗺️</span> Live Map
+      <span class="nav-badge nav-badge-live" id="activeRidersBadge" style="display:none;">0 Live</span>
+    </button>
+    <div class="nav-section-label" style="margin-top:8px;">Manage</div>
+    <button class="nav-item" onclick="showPage('users',this)">
+      <span class="nav-icon">👥</span> Users
+    </button>
+    <button class="nav-item" onclick="showPage('rides',this)">
+      <span class="nav-icon">🚴</span> Rides
+    </button>
+    <div class="nav-section-label" style="margin-top:8px;">System</div>
+    <button class="nav-item" onclick="showPage('rfidlogs',this)">
+      <span class="nav-icon">📡</span> RFID Logs
+    </button>
   </nav>
   <div class="sidebar-bottom">
-    <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span>Sign Out</button>
+    <button class="nav-item" onclick="logout()" style="color:var(--red);">
+      <span class="nav-icon">🚪</span> Logout
+    </button>
   </div>
 </aside>
 
-<!-- ── MAIN ── -->
-<div class="main">
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+<!-- MAIN -->
+<main class="main">
+  <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-left">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
       <div class="topbar-title" id="topbarTitle">Overview</div>
     </div>
     <div class="topbar-right">
-      <div class="tb-chip"><div class="live-dot"></div><span id="topbarTime">--:--:--</span></div>
-      <div class="tb-chip" onclick="refreshAll()" title="Refresh data">🔄 Refresh</div>
+      <div class="clock-chip">
+        <div class="clock-dot"></div>
+        <span id="clockDisplay">--:--:--</span>
+      </div>
+      <button class="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
     </div>
   </header>
 
-  <!-- ── OVERVIEW PAGE ── -->
+  <!-- ── PAGE: OVERVIEW ── -->
   <div class="page active" id="page-overview">
     <div class="metrics-row">
-      <div class="metric-card mc-purple">
+      <div class="metric-card mc-accent">
         <div class="metric-icon">👥</div>
         <div class="metric-label">Total Users</div>
-        <div class="metric-val" id="metUsers">—</div>
-        <div class="metric-change neutral" id="metUsersChange">Loading...</div>
-      </div>
-      <div class="metric-card mc-green">
-        <div class="metric-icon">🛣️</div>
-        <div class="metric-label">Total Rides</div>
-        <div class="metric-val" id="metRides">—</div>
-        <div class="metric-change neutral" id="metRidesChange">Loading...</div>
+        <div class="metric-val" id="metUsers" style="color:var(--accent);">—</div>
+        <div class="metric-sub" id="metUsersSub">Loading…</div>
       </div>
       <div class="metric-card mc-blue">
-        <div class="metric-icon">💳</div>
-        <div class="metric-label">RFID Linked</div>
-        <div class="metric-val" id="metRfid">—</div>
-        <div class="metric-change neutral">of all users</div>
+        <div class="metric-icon">🚴</div>
+        <div class="metric-label">Total Rides</div>
+        <div class="metric-val" id="metRides" style="color:var(--accent2);">—</div>
+        <div class="metric-sub" id="metRidesSub">Loading…</div>
       </div>
       <div class="metric-card mc-amber">
+        <div class="metric-icon">💳</div>
+        <div class="metric-label">RFID Linked</div>
+        <div class="metric-val" id="metRfid" style="color:var(--amber);">—</div>
+        <div class="metric-sub" id="metRfidSub">of all users</div>
+      </div>
+      <div class="metric-card mc-red">
         <div class="metric-icon">💰</div>
         <div class="metric-label">Total Revenue</div>
-        <div class="metric-val" id="metRevenue">—</div>
-        <div class="metric-change neutral" id="metRevenueChange">Loading...</div>
+        <div class="metric-val" id="metRevenue" style="color:var(--accent);">—</div>
+        <div class="metric-sub" id="metRevenueSub">from rides</div>
       </div>
     </div>
 
-    <div class="grid-2">
-      <!-- Recent Users -->
-      <div class="card">
+    <!-- Mini Live Map Preview on Overview -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          🗺️ Live Tracking Map
+          <span id="overviewMapLiveDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;transition:background 0.4s;margin-left:4px;"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="overviewMapStatus" style="font-size:12px;color:var(--text3);">Connecting…</span>
+          <button class="card-action" onclick="showPage('livemap',document.querySelector('[onclick*=livemap]'))">Full Map →</button>
+        </div>
+      </div>
+      <div class="map-status-bar">
+        <div class="left">
+          <div class="status-item">
+            <div class="status-dot" id="mqttDot"></div>
+            <span id="mqttLabel">MQTT Offline</span>
+          </div>
+          <div class="status-item">
+            <div class="status-dot active" id="activeRidesDot" style="background:var(--text3);animation:none;"></div>
+            <span id="activeRidesLabel">0 active rides</span>
+          </div>
+          <div class="status-item">
+            <span id="lastGpsAge" style="color:var(--text3);">No GPS yet</span>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="centerAdminMap()">📍 Center Map</button>
+      </div>
+      <div id="adminLiveMap" style="display:none;"></div>
+      <div class="map-waiting" id="mapWaiting">
+        <div class="map-waiting-icon">📡</div>
+        <h3>Waiting for GPS Signal</h3>
+        <p>No active rides detected. Live location will appear here when a user starts a ride.</p>
+      </div>
+    </div>
+
+    <!-- Recent Registrations + Active Riders grid -->
+    <div class="dash-grid">
+      <!-- Recent Registrations -->
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header">
           <div class="card-title">👥 Recent Registrations</div>
           <button class="card-action" onclick="showPage('users',document.querySelector('[onclick*=users]'))">View All →</button>
         </div>
-        <div class="card-body" style="padding:0 22px 16px;">
+        <div style="overflow-x:auto;">
           <table class="data-table">
-            <thead><tr><th>User</th><th>Plan</th><th>RFID</th><th>Status</th></tr></thead>
-            <tbody id="recentUsersTbody"><tr class="loading-row"><td colspan="4"><div class="loader"></div></td></tr></tbody>
+            <thead>
+              <tr><th>User</th><th>Plan</th><th>RFID</th><th>Joined</th></tr>
+            </thead>
+            <tbody id="recentUsersTbody">
+              <tr><td colspan="4" style="text-align:center;padding:28px;color:var(--text3);">Loading…</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Recent Rides -->
-      <div class="card">
+      <!-- Active Riders Panel -->
+      <div class="card" style="margin-bottom:0;">
         <div class="card-header">
-          <div class="card-title">🛣️ Recent Rides</div>
-          <button class="card-action" onclick="showPage('rides',document.querySelector('[onclick*=rides]'))">View All →</button>
+          <div class="card-title">🔴 Active Riders</div>
+          <span id="activeCountLabel" style="font-size:12px;color:var(--text3);">0 on road</span>
         </div>
-        <div class="card-body" style="padding:0 22px 16px;">
-          <table class="data-table">
-            <thead><tr><th>User</th><th>Duration</th><th>Fare</th><th>Status</th></tr></thead>
-            <tbody id="recentRidesTbody"><tr class="loading-row"><td colspan="4"><div class="loader"></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- RFID Activity -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">💳 Latest RFID Activity</div>
-        <button class="card-action" onclick="showPage('rfid-history',document.querySelector('[onclick*=rfid-history]'))">View Full History →</button>
-      </div>
-      <div class="card-body" style="padding:0 22px 16px;">
-        <table class="data-table">
-          <thead><tr><th>Time</th><th>User</th><th>RFID UID</th><th>Status</th><th>Device</th></tr></thead>
-          <tbody id="rfidActivityTbody"><tr class="loading-row"><td colspan="5"><div class="loader"></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── USERS PAGE ── -->
-  <div class="page" id="page-users">
-    <div class="search-bar">
-      <span>🔍</span>
-      <input type="text" placeholder="Search users by name or email..." id="userSearch" oninput="filterUsers()"/>
-    </div>
-    <div class="filter-tabs">
-      <button class="ftab active" onclick="setUserFilter('all',this)">All Users</button>
-      <button class="ftab" onclick="setUserFilter('basic',this)">Basic</button>
-      <button class="ftab" onclick="setUserFilter('monthly',this)">Monthly</button>
-      <button class="ftab" onclick="setUserFilter('student',this)">Student</button>
-      <button class="ftab" onclick="setUserFilter('active',this)">Active</button>
-      <button class="ftab" onclick="setUserFilter('suspended',this)">Suspended</button>
-      <button class="ftab" onclick="setUserFilter('rfid',this)">Has RFID</button>
-      <button class="ftab" onclick="setUserFilter('no-rfid',this)">No RFID</button>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">👥 Registered Users</div>
-        <span style="font-size:13px;color:var(--text3);" id="userTableCount">Loading...</span>
-      </div>
-      <div class="card-body" style="padding:0 22px 16px;">
-        <table class="data-table">
-          <thead><tr><th>User</th><th>Phone</th><th>City</th><th>Plan</th><th>RFID</th><th>Balance</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
-          <tbody id="usersTbody"><tr class="loading-row"><td colspan="9"><div class="loader"></div></td></tr></tbody>
-        </table>
-        <div class="pagination" id="userPagination"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── RIDES PAGE ── -->
-  <div class="page" id="page-rides">
-    <div class="metrics-row" style="grid-template-columns:repeat(3,1fr);">
-      <div class="metric-card mc-blue"><div class="metric-icon">🛣️</div><div class="metric-label">Total Rides</div><div class="metric-val" id="rideMetTotal">—</div></div>
-      <div class="metric-card mc-green"><div class="metric-icon">📏</div><div class="metric-label">Total Distance</div><div class="metric-val" id="rideMetDist">—</div></div>
-      <div class="metric-card mc-amber"><div class="metric-icon">💰</div><div class="metric-label">Total Revenue</div><div class="metric-val" id="rideMetRev">—</div></div>
-    </div>
-    <div class="filter-tabs">
-      <button class="ftab active" onclick="setRideFilter('all',this)">All Rides</button>
-      <button class="ftab" onclick="setRideFilter('active',this)">🟢 Active</button>
-      <button class="ftab" onclick="setRideFilter('completed',this)">Completed</button>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">🛣️ All Ride Sessions</div>
-        <span style="font-size:13px;color:var(--text3);" id="rideTableCount">Loading...</span>
-      </div>
-      <div class="card-body" style="padding:0 22px 16px;">
-        <table class="data-table">
-          <thead><tr><th>Date/Time</th><th>User</th><th>Bike</th><th>From → To</th><th>Duration</th><th>Distance</th><th>Fare</th><th>Status</th></tr></thead>
-          <tbody id="ridesTbody"><tr class="loading-row"><td colspan="8"><div class="loader"></div></td></tr></tbody>
-        </table>
-        <div class="pagination" id="ridePagination"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── RFID MANAGEMENT PAGE ── -->
-  <div class="page" id="page-rfid">
-    <!-- Live Detection Card -->
-    <div class="rfid-monitor" id="rfidMonitor">
-      <div class="rfid-scan-ring">💳</div>
-      <div style="font-family:var(--ff);font-size:16px;font-weight:700;margin-bottom:6px;" id="rfidMonitorTitle">Waiting for RFID tap...</div>
-      <div style="font-size:13px;color:var(--text3);" id="rfidMonitorSub">When a user taps their card, it will appear here instantly.</div>
-    </div>
-
-    <!-- Assign RFID -->
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title">💳 Assign RFID Card to User</div></div>
-      <div class="card-body">
-        <div style="background:rgba(124,92,252,0.05);border:1px solid rgba(124,92,252,0.15);border-radius:var(--r-sm);padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--text2);">
-          🛡️ Select the user from the list (only users without an RFID are shown), then enter the RFID card UID and click Assign.
-        </div>
-        <div class="rfid-form">
-          <div>
-            <label class="form-label-s">User (without RFID)</label>
-            <select class="form-input-s" id="rfidUserId" style="background:var(--surface);border:1px solid var(--border2);color:var(--text);">
-              <option value="">— Select user —</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label-s">RFID Card UID</label>
-            <input class="form-input-s" id="rfidUidInput" type="text" placeholder="e.g. C33B51FE"/>
-          </div>
-          <button class="assign-btn" onclick="assignRfid()">Assign Card</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- RFID Table -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">💳 RFID Assignments</div>
-        <span style="font-size:13px;color:var(--text3);" id="rfidCount">Loading...</span>
-      </div>
-      <div class="card-body" style="padding:0 22px 16px;">
-        <table class="data-table">
-          <thead><tr><th>User</th><th>Email</th><th>RFID UID</th><th>Plan</th><th>Balance</th><th>Actions</th></tr></thead>
-          <tbody id="rfidTbody"><tr class="loading-row"><td colspan="6"><div class="loader"></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── RFID HISTORY PAGE ── -->
-  <div class="page" id="page-rfid-history">
-    <div class="metrics-row" style="grid-template-columns:repeat(4,1fr);">
-      <div class="metric-card mc-blue"><div class="metric-icon">💳</div><div class="metric-label">Total Taps</div><div class="metric-val" id="rfidStatTotal">—</div></div>
-      <div class="metric-card mc-green"><div class="metric-icon">✅</div><div class="metric-label">Successful</div><div class="metric-val" id="rfidStatSuccess">—</div></div>
-      <div class="metric-card mc-red"><div class="metric-icon">❌</div><div class="metric-label">Failed</div><div class="metric-val" id="rfidStatFailed">—</div></div>
-      <div class="metric-card mc-purple"><div class="metric-icon">📊</div><div class="metric-label">Success Rate</div><div class="metric-val" id="rfidStatRate">—</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">🕐 RFID Login History</div>
-        <span style="font-size:13px;color:var(--text3);" id="rfidHistoryCount">Loading...</span>
-      </div>
-      <div class="card-body" style="padding:0 22px 16px;">
-        <table class="data-table">
-          <thead><tr><th>Time</th><th>User</th><th>RFID UID</th><th>Station</th><th>Status</th><th>Device</th></tr></thead>
-          <tbody id="rfidHistoryTbody"><tr class="loading-row"><td colspan="6"><div class="loader"></div></td></tr></tbody>
-        </table>
-        <div class="pagination" id="rfidHistPagination"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── ANALYTICS PAGE ── -->
-  <div class="page" id="page-analytics">
-    <div class="metrics-row">
-      <div class="metric-card mc-purple"><div class="metric-icon">👤</div><div class="metric-label">Active Users</div><div class="metric-val" id="anaActiveUsers">—</div></div>
-      <div class="metric-card mc-green"><div class="metric-icon">📏</div><div class="metric-label">Avg Distance</div><div class="metric-val" id="anaAvgDist">—</div></div>
-      <div class="metric-card mc-blue"><div class="metric-icon">💰</div><div class="metric-label">Avg Fare</div><div class="metric-val" id="anaAvgFare">—</div></div>
-      <div class="metric-card mc-amber"><div class="metric-icon">🔄</div><div class="metric-label">Active Rides</div><div class="metric-val" id="anaActiveRides">—</div></div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><div class="card-title">📦 Plan Distribution</div></div>
-        <div class="card-body">
-          <div style="display:flex;flex-direction:column;gap:14px;" id="planDistribution">
-            <div style="text-align:center;color:var(--text3);"><div class="loader"></div></div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">💳 RFID Coverage</div></div>
-        <div class="card-body">
-          <div style="display:flex;flex-direction:column;gap:14px;" id="rfidCoverage">
-            <div style="text-align:center;color:var(--text3);"><div class="loader"></div></div>
+        <div class="card-body" style="padding:16px;">
+          <div class="active-riders-panel" id="activeRidersList">
+            <div class="no-riders">
+              <div class="no-riders-icon">🚲</div>
+              <div>No active rides right now</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-header"><div class="card-title">📈 Revenue Breakdown (from Rides)</div></div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;gap:12px;" id="revenueBreakdown">
-          <div style="text-align:center;color:var(--text3);"><div class="loader"></div></div>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <!-- ── GPS TRACKING PAGE ── -->
-  <div class="page" id="page-gps">
+  <!-- ── PAGE: LIVE MAP (full) ── -->
+  <div class="page" id="page-livemap">
     <div class="metrics-row" style="margin-bottom:20px;">
-      <div class="metric-card mc-green">
-        <div class="metric-icon">📡</div>
-        <div class="metric-label">GPS Fleet Status</div>
-        <div class="metric-val" id="adminGpsStatus" style="font-size:16px;">—</div>
-        <div class="metric-change neutral" id="adminGpsSub">Polling...</div>
+      <div class="metric-card mc-red">
+        <div class="metric-label">Active Riders</div>
+        <div class="metric-val" id="fullMapActiveCount" style="color:var(--red);">0</div>
+        <div class="metric-sub">On road now</div>
+      </div>
+      <div class="metric-card mc-accent">
+        <div class="metric-label">GPS Fix</div>
+        <div class="metric-val" id="fullMapGpsFix" style="font-size:16px;color:var(--text3);">Offline</div>
+        <div class="metric-sub" id="fullMapGpsAge">No signal</div>
       </div>
       <div class="metric-card mc-blue">
-        <div class="metric-icon">🌐</div>
-        <div class="metric-label">Latitude</div>
-        <div class="metric-val" id="adminGpsLat" style="font-size:16px;">—</div>
-        <div class="metric-change neutral">degrees</div>
+        <div class="metric-label">Speed</div>
+        <div class="metric-val" id="fullMapSpeed" style="font-size:20px;color:var(--accent2);">— km/h</div>
+        <div class="metric-sub">Last update</div>
       </div>
-      <div class="metric-card mc-purple">
-        <div class="metric-icon">🌐</div>
-        <div class="metric-label">Longitude</div>
-        <div class="metric-val" id="adminGpsLon" style="font-size:16px;">—</div>
-        <div class="metric-change neutral">degrees</div>
-      </div>
-      <div class="metric-card mc-amber">
-        <div class="metric-icon">🛰️</div>
+      <div class="metric-card">
         <div class="metric-label">Satellites</div>
-        <div class="metric-val" id="adminGpsSats" style="font-size:16px;">—</div>
-        <div class="metric-change neutral" id="adminGpsAge">No data</div>
+        <div class="metric-val" id="fullMapSats" style="font-size:20px;">—</div>
+        <div class="metric-sub">In view</div>
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-header">
-        <div class="card-title">📡 Live Vehicle Tracking — All Users (ESP32 + NEO-6M)</div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <div id="adminGpsDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);transition:background 0.4s;"></div>
-            <span id="adminGpsLabel" style="color:var(--text3);font-size:13px;">Offline</span>
+    <div class="dash-grid">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <div class="card-title">
+            📍 Live User Locations
+            <div id="fullMapLiveDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;transition:background 0.4s;margin-left:4px;"></div>
           </div>
-          <button onclick="clearAdminGpsTrail()" style="font-size:12px;padding:5px 14px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:8px;color:var(--red);cursor:pointer;font-family:var(--fb);">🗑 Clear Trail</button>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="status-item">
+              <div class="status-dot" id="fullMqttDot"></div>
+              <span id="fullMqttLabel" style="font-size:12px;color:var(--text3);">MQTT Offline</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="centerAdminMap()">📍 Center</button>
+          </div>
+        </div>
+        <div id="fullAdminMap" style="width:100%;height:500px;border-radius:0 0 14px 14px;"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <div class="card-title">🔴 Active Riders</div>
+          <span id="fullActiveCountLabel" style="font-size:12px;color:var(--text3);">0 on road</span>
+        </div>
+        <div class="card-body" style="padding:16px;">
+          <div class="active-riders-panel" id="fullActiveRidersList">
+            <div class="no-riders">
+              <div class="no-riders-icon">🚲</div>
+              <div>No active rides right now</div>
+            </div>
+          </div>
+        </div>
+        <!-- GPS Trail Info -->
+        <div style="padding:0 16px 16px;">
+          <div style="background:var(--surface);border-radius:var(--r-sm);padding:14px 16px;">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Last GPS Point</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+              <div><span style="color:var(--text3);">Lat: </span><span id="detailLat" style="color:var(--accent);">—</span></div>
+              <div><span style="color:var(--text3);">Lon: </span><span id="detailLon" style="color:var(--accent2);">—</span></div>
+              <div><span style="color:var(--text3);">Speed: </span><span id="detailSpeed">— km/h</span></div>
+              <div><span style="color:var(--text3);">Sats: </span><span id="detailSats">—</span></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div style="position:relative;">
-        <div id="adminGpsMapDiv" style="width:100%;height:440px;border-radius:0 0 14px 14px;"></div>
-        <div id="adminGpsWaiting" style="display:none;"></div>
-      </div>
     </div>
+  </div>
 
+  <!-- ── PAGE: USERS ── -->
+  <div class="page" id="page-users">
     <div class="card">
       <div class="card-header">
-        <div class="card-title">🗺️ GPS Trail Log</div>
-        <div id="adminTrailCount" style="font-size:13px;color:var(--text3);">0 points</div>
+        <div class="card-title">👥 All Users</div>
+        <button class="btn btn-sm btn-primary" onclick="openAddUserModal()">+ Add User</button>
       </div>
-      <div class="card-body" style="padding:0 22px 16px;max-height:260px;overflow-y:auto;">
-        <table class="data-table">
-          <thead><tr><th>#</th><th>Latitude</th><th>Longitude</th><th>Speed (km/h)</th><th>Satellites</th><th>Time</th></tr></thead>
-          <tbody id="adminGpsTrailBody">
-            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3);">No trail data yet.</td></tr>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="usersTable">
+          <thead>
+            <tr><th>User</th><th>Email</th><th>Plan</th><th>RFID</th><th>Balance</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="usersTbody">
+            <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3);">Loading…</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-</div><!-- end .main -->
+  <!-- ── PAGE: RIDES ── -->
+  <div class="page" id="page-rides">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🚴 All Rides</div>
+        <span id="rideCountLabel" style="font-size:13px;color:var(--text3);"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>User</th><th>Bike</th><th>Start Station</th><th>Start Time</th><th>Duration</th><th>Fare</th><th>Status</th></tr>
+          </thead>
+          <tbody id="ridesTbody">
+            <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-<!-- USER DETAIL MODAL -->
-<div class="modal-overlay" id="userModal">
+  <!-- ── PAGE: RFID LOGS ── -->
+  <div class="page" id="page-rfidlogs">
+    <div class="metrics-row">
+      <div class="metric-card mc-accent">
+        <div class="metric-label">Total Scans</div>
+        <div class="metric-val" id="rfidTotal" style="color:var(--accent);">—</div>
+        <div class="metric-sub">All time</div>
+      </div>
+      <div class="metric-card mc-accent">
+        <div class="metric-label">Successful</div>
+        <div class="metric-val" id="rfidSuccess" style="color:var(--accent);">—</div>
+        <div class="metric-sub" id="rfidSuccessRate">—</div>
+      </div>
+      <div class="metric-card mc-red">
+        <div class="metric-label">Denied</div>
+        <div class="metric-val" id="rfidFailed" style="color:var(--red);">—</div>
+        <div class="metric-sub">Unknown cards</div>
+      </div>
+      <div class="metric-card mc-blue">
+        <div class="metric-label">This Week</div>
+        <div class="metric-val" id="rfidWeek" style="color:var(--accent2);">—</div>
+        <div class="metric-sub" id="rfidAvgDay">avg/day</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📡 RFID Scan History</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Time</th><th>RFID UID</th><th>User</th><th>Station</th><th>Status</th></tr>
+          </thead>
+          <tbody id="rfidLogsTbody">
+            <tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text3);">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="addUserModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="userModalTitle">User Details</div>
-      <button class="modal-close" onclick="closeModal('userModal')">✕</button>
+      <div class="modal-title">➕ Add / Assign RFID User</div>
+      <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
     </div>
-    <div class="modal-tabs">
-      <button class="mtab active" onclick="switchModalTab('info',this)">👤 Info</button>
-      <button class="mtab" onclick="switchModalTab('rides',this)">🛣️ Ride History</button>
-      <button class="mtab" onclick="switchModalTab('rfid-log',this)">💳 RFID Logs</button>
+    <div class="form-group">
+      <label class="form-label">First Name</label>
+      <input class="form-input" id="addFirstName" placeholder="First name"/>
     </div>
-    <!-- Info Tab -->
-    <div id="modalTabInfo">
-      <div class="modal-field"><label class="modal-label">Full Name</label><input class="modal-input" id="muName" disabled/></div>
-      <div class="modal-field"><label class="modal-label">Email</label><input class="modal-input" id="muEmail" disabled/></div>
-      <div class="modal-field"><label class="modal-label">Phone</label><input class="modal-input" id="muPhone" disabled/></div>
-      <div class="modal-field"><label class="modal-label">City</label><input class="modal-input" id="muCity" disabled/></div>
-      <div class="modal-field"><label class="modal-label">Plan</label>
-        <select class="modal-input" id="muPlan">
-          <option value="basic">Basic</option>
-          <option value="monthly">Monthly</option>
-          <option value="student">Student</option>
-        </select>
-      </div>
-      <div class="modal-field"><label class="modal-label">RFID Card UID</label><input class="modal-input" id="muRfid" placeholder="Not assigned"/></div>
-      <div class="modal-field"><label class="modal-label">Wallet Balance (৳)</label><input class="modal-input" id="muBalance" type="number"/></div>
-      <div class="modal-field"><label class="modal-label">Account Status</label><input class="modal-input" id="muStatus" disabled/></div>
-      <div class="modal-field"><label class="modal-label">Joined</label><input class="modal-input" id="muJoined" disabled/></div>
-      <div class="modal-actions">
-        <button class="modal-btn mb-secondary" onclick="closeModal('userModal')">Cancel</button>
-        <button class="modal-btn mb-danger" id="muSuspendBtn" onclick="toggleSuspend()">Suspend User</button>
-        <button class="modal-btn mb-primary" onclick="saveUser()">Save Changes</button>
-      </div>
+    <div class="form-group">
+      <label class="form-label">Last Name</label>
+      <input class="form-input" id="addLastName" placeholder="Last name"/>
     </div>
-    <!-- Rides Tab -->
-    <div id="modalTabRides" style="display:none;">
-      <div style="font-size:13px;color:var(--text3);margin-bottom:12px;">Showing last 20 rides for this user.</div>
-      <table class="data-table">
-        <thead><tr><th>Date</th><th>Bike</th><th>Duration</th><th>Fare</th><th>Status</th></tr></thead>
-        <tbody id="modalRidesTbody"><tr class="loading-row"><td colspan="5"><div class="loader"></div></td></tr></tbody>
-      </table>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="addEmail" placeholder="user@example.com"/>
     </div>
-    <!-- RFID Logs Tab -->
-    <div id="modalTabRfidLog" style="display:none;">
-      <div style="font-size:13px;color:var(--text3);margin-bottom:12px;">Last 20 RFID tap events for this user.</div>
-      <table class="data-table">
-        <thead><tr><th>Time</th><th>RFID UID</th><th>Status</th><th>Station</th></tr></thead>
-        <tbody id="modalRfidTbody"><tr class="loading-row"><td colspan="4"><div class="loader"></div></td></tr></tbody>
-      </table>
+    <div class="form-group">
+      <label class="form-label">Phone</label>
+      <input class="form-input" id="addPhone" placeholder="+880…"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">City</label>
+      <input class="form-input" id="addCity" placeholder="Khulna"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">RFID UID</label>
+      <input class="form-input" id="addRfid" placeholder="e.g. C33B51FE"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plan</label>
+      <select class="form-input form-select" id="addPlan">
+        <option value="basic">Basic</option>
+        <option value="monthly">Monthly</option>
+        <option value="student">Student</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddUser()">Create User</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"><span id="toastMsg"></span></div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
-const API = "https://kuettrack.onrender.com";
-let allUsers = [];
-let allRides = [];
-let allRfidLogins = [];
-let userFilter = 'all';
-let rideFilter = 'all';
-let userPage = 1;
-let ridePage = 1;
-let rfidHistPage = 1;
-const PER_PAGE = 10;
-let editingUserId = null;
-let currentModalTab = 'info';
-let rfidPollInterval = null;
+// ─── Config ──────────────────────────────────────────────────────────────────
+const API = window.location.origin;
+let adminToken = null;
+let adminUser  = null;
 
-// ── INIT ──
-window.onload = async () => {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  const stored = localStorage.getItem('kuettrack_admin');
-  if (!token || !stored) { window.location.href = 'admin-login.html'; return; }
-  const admin = JSON.parse(stored);
-  if (admin.role !== 'admin') { window.location.href = 'admin-login.html'; return; }
+// ─── Map state ───────────────────────────────────────────────────────────────
+let adminMap       = null;   // Leaflet map (shared overview + livemap)
+let fullAdminMap   = null;   // full page map
+let riderMarkers   = {};     // userId → L.Marker
+let riderMarkersFull = {};
+let trailPolyline  = null;
+let trailPolylineFull = null;
+let stationMarkers = [];
+let stationMarkersFull = [];
+let activeRidersData = []; // live data cache
+let lastGpsTs = null;
+let mapInitialized = false;
+let fullMapInitialized = false;
 
-  const init = ((admin.firstName || 'A')[0] + (admin.lastName || 'D')[0]).toUpperCase();
-  document.getElementById('adminAvatar').textContent = init;
-  document.getElementById('adminName').textContent = `${admin.firstName} ${admin.lastName}`;
+// MQTT
+let mqttAdmin = null;
+let mqttConnected = false;
 
-  setInterval(updateClock, 1000); updateClock();
+// Polling
+let activeRidersPollTimer = null;
 
-  // Verify token is still valid before loading
+// ─── Auth check ──────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  adminToken = localStorage.getItem('kuettrack_token');
+  const stored = localStorage.getItem('kuettrack_user');
+  if (!adminToken || !stored) { logout(); return; }
   try {
-    const check = await fetch(API + '/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
-    if (!check.ok) { localStorage.clear(); window.location.href = 'admin-login.html'; return; }
-  } catch (e) {
-    // Server unreachable — continue anyway so error shows in tables
-    console.warn('Backend unreachable:', e.message);
-  }
+    adminUser = JSON.parse(stored);
+    if (adminUser.role !== 'admin') { logout(); return; }
+  } catch { logout(); return; }
+
+  // Populate sidebar
+  const initials = ((adminUser.firstName||'A')[0] + (adminUser.lastName||'D')[0]).toUpperCase();
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent = adminUser.firstName + ' ' + adminUser.lastName;
+
+  // Start clock
+  setInterval(() => {
+    document.getElementById('clockDisplay').textContent = new Date().toLocaleTimeString('en-GB');
+  }, 1000);
 
   // Load all data
   await refreshAll();
-  // Load station data from server
-  await loadAdminStations();
 
-  // Start RFID live poll (every 3s)
-  startRfidPoll();
-};
+  // Init MQTT
+  initMqttAdmin();
 
-function updateClock() {
-  document.getElementById('topbarTime').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
+  // Start GPS polling fallback (every 15s)
+  activeRidersPollTimer = setInterval(pollActiveRiders, 15000);
+});
 
-async function refreshAll() {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  await Promise.all([
-    fetchUsers(token),
-    fetchRides(token),
-    fetchRfidLogins(token),
-    fetchRfidStats(token),
-  ]);
-  updateOverview();
-  updateAnalytics();
-}
-
-// ── API CALLS ──
-async function fetchUsers(token) {
-  try {
-    const res = await fetch(`${API}/api/admin/users`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (res.status === 401 || res.status === 403) {
-      const errRow = (cols) => `<tr><td colspan="${cols}" style="text-align:center;padding:40px;color:var(--red);">⛔ Session expired or not admin. <a href="admin-login.html" style="color:var(--accent);">Login again →</a></td></tr>`;
-      document.getElementById("usersTbody").innerHTML = errRow(9);
-      document.getElementById("recentUsersTbody").innerHTML = errRow(4);
-      return;
-    }
-
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    allUsers = Array.isArray(data) ? data : (data.users || []);
-    const nonAdminCount = allUsers.filter(u => u.role !== 'admin').length;
-    renderUsers();
-    renderRfidTable();
-    populateRfidSelect();
-    renderRecentUsers();
-    document.getElementById("navUserCount").textContent = nonAdminCount;
-  } catch (e) {
-    console.error("fetchUsers failed:", e);
-    const isNetwork = e.message.includes("fetch") || e.message === "Failed to fetch";
-    const msg = isNetwork ? "Cannot reach server at " + API + " — is server.js running?" : e.message;
-    const errRow = (cols) => `<tr><td colspan="${cols}" style="text-align:center;padding:40px;"><div style="color:var(--red);margin-bottom:6px;">⚠️ ${msg}</div><div style="font-size:12px;color:var(--text3);">Open F12 console for details.</div></td></tr>`;
-    document.getElementById("usersTbody").innerHTML = errRow(9);
-    document.getElementById("recentUsersTbody").innerHTML = errRow(4);
-    document.getElementById("userTableCount").textContent = "Failed to load";
-    showToast("⚠️ " + msg);
-  }
-}
-
-async function fetchRides(token) {
-  try {
-    const res = await fetch(`${API}/api/rides`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed');
-    allRides = await res.json();
-    renderRides();
-    renderRecentRides();
-    document.getElementById('navRideCount').textContent = allRides.length;
-  } catch (e) {
-    document.getElementById('ridesTbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">Could not load rides.</td></tr>';
-  }
-}
-
-async function fetchRfidLogins(token) {
-  try {
-    const res = await fetch(`${API}/api/admin/rfid-logins`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed');
-    allRfidLogins = await res.json();
-    renderRfidHistory();
-    renderRfidActivity();
-  } catch (e) {
-    console.warn('Could not load RFID logins');
-  }
-}
-
-async function fetchRfidStats(token) {
-  try {
-    const res = await fetch(`${API}/api/admin/rfid-stats`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed');
-    const s = await res.json();
-    document.getElementById('rfidStatTotal').textContent = s.total;
-    document.getElementById('rfidStatSuccess').textContent = s.successful;
-    document.getElementById('rfidStatFailed').textContent = s.failed;
-    document.getElementById('rfidStatRate').textContent = s.successRate;
-  } catch (e) {}
-}
-
-// ── OVERVIEW ──
-function updateOverview() {
-  const users = allUsers.filter(u => u.role !== 'admin');
-  const total = users.length;
-  const active = users.filter(u => u.isActive).length;
-  const rfidLinked = users.filter(u => u.rfidUid).length;
-  const totalRevenue = allRides.filter(r => r.status === 'completed').reduce((s, r) => s + (r.fare || 0), 0);
-  const activeRides = allRides.filter(r => r.status === 'active').length;
-
-  document.getElementById('metUsers').textContent = total;
-  document.getElementById('metUsersChange').textContent = `${active} active, ${total - active} suspended`;
-  document.getElementById('metRides').textContent = allRides.length;
-  document.getElementById('metRidesChange').textContent = `${activeRides} active now`;
-  document.getElementById('metRfid').textContent = `${rfidLinked}/${total}`;
-  document.getElementById('metRevenue').textContent = `৳${totalRevenue.toLocaleString()}`;
-  document.getElementById('metRevenueChange').textContent = `from ${allRides.filter(r => r.status === 'completed').length} rides`;
-}
-
-function renderRecentUsers() {
-  const recent = [...allUsers].filter(u => u.role !== 'admin').slice(0, 6);
-  const tbody = document.getElementById('recentUsersTbody');
-  if (!recent.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3);">No users yet.</td></tr>'; return; }
-  tbody.innerHTML = recent.map(u => {
-    const fn = u.firstName || '?';
-    const ln = u.lastName || '?';
-    const init = (fn[0] + ln[0]).toUpperCase();
-    return `<tr>
-      <td><div class="user-cell">
-        <div class="user-mini-av" style="background:rgba(124,92,252,0.15);color:var(--accent3);">${init}</div>
-        <div><div style="font-size:13px;">${fn} ${ln}</div><div style="font-size:11px;color:var(--text3);">${u.email}</div></div>
-      </div></td>
-      <td><span class="badge ${u.plan === 'monthly' ? 'b-green' : u.plan === 'student' ? 'b-blue' : 'b-gray'}">${u.plan || '—'}</span></td>
-      <td>${u.rfidUid ? `<span class="badge b-purple" style="font-size:10px;">✓ Linked</span>` : '<span class="badge b-gray">None</span>'}</td>
-      <td><span class="badge ${u.isActive ? 'b-green' : 'b-red'}">${u.isActive ? 'Active' : 'Suspended'}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-function renderRecentRides() {
-  const recent = [...allRides].slice(0, 6);
-  const tbody = document.getElementById('recentRidesTbody');
-  if (!recent.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3);">No rides yet.</td></tr>'; return; }
-  tbody.innerHTML = recent.map(r => {
-    const user = r.userId;
-    const name = user ? `${user.firstName} ${user.lastName}` : 'Unknown';
-    return `<tr>
-      <td><span style="font-size:13px;">${name}</span></td>
-      <td style="font-size:13px;color:var(--text2);">${r.duration || (r.status === 'active' ? '🔴 Active' : '—')}</td>
-      <td style="font-family:var(--ff);font-weight:600;color:var(--accent);">${r.fare ? '৳' + r.fare : '—'}</td>
-      <td><span class="badge ${r.status === 'active' ? 'b-blue' : r.status === 'completed' ? 'b-green' : 'b-red'}">${r.status}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-function renderRfidActivity() {
-  const recent = [...allRfidLogins].slice(0, 8);
-  const tbody = document.getElementById('rfidActivityTbody');
-  if (!recent.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3);">No RFID activity yet.</td></tr>'; return; }
-  tbody.innerHTML = recent.map(l => {
-    const user = l.userId;
-    const name = user ? `${user.firstName} ${user.lastName}` : '<span style="color:var(--text3);">Unknown Card</span>';
-    return `<tr>
-      <td style="font-size:12px;color:var(--text3);">${new Date(l.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
-      <td>${name}</td>
-      <td><span class="badge b-purple" style="font-family:monospace;font-size:10px;">${l.rfidUid}</span></td>
-      <td><span class="badge ${l.status === 'success' ? 'b-green' : 'b-red'}">${l.status === 'success' ? '✅ Success' : l.status === 'invalid_card' ? '❌ Invalid' : '⚠️ Error'}</span></td>
-      <td style="font-size:11px;color:var(--text3);">${l.stationId || 'STATION-001'}</td>
-    </tr>`;
-  }).join('');
-}
-
-// ── USERS ──
-let filteredUsers = [];
-function renderUsers() {
-  let users = allUsers.filter(u => u.role !== 'admin').filter(u => {
-    if (userFilter === 'basic') return u.plan === 'basic';
-    if (userFilter === 'monthly') return u.plan === 'monthly';
-    if (userFilter === 'student') return u.plan === 'student';
-    if (userFilter === 'active') return u.isActive;
-    if (userFilter === 'suspended') return !u.isActive;
-    if (userFilter === 'rfid') return !!u.rfidUid;
-    if (userFilter === 'no-rfid') return !u.rfidUid;
-    return true;
-  });
-  const q = document.getElementById('userSearch')?.value?.toLowerCase() || '';
-  if (q) users = users.filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q));
-  filteredUsers = users;
-  document.getElementById('userTableCount').textContent = `${users.length} users`;
-
-  const total = users.length, pages = Math.ceil(total / PER_PAGE);
-  const start = (userPage - 1) * PER_PAGE, slice = users.slice(start, start + PER_PAGE);
-  const colors = ['rgba(0,229,160,0.15)', 'rgba(0,136,255,0.15)', 'rgba(124,92,252,0.15)', 'rgba(255,171,0,0.12)', 'rgba(255,80,80,0.1)'];
-  const tbody = document.getElementById('usersTbody');
-
-  if (!slice.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">No users found.</td></tr>'; return; }
-
-  tbody.innerHTML = slice.map((u, i) => {
-    const c = colors[i % colors.length];
-    const fn = u.firstName || '?';
-    const ln = u.lastName || '?';
-    const init = (fn[0] + ln[0]).toUpperCase();
-    return `<tr>
-      <td><div class="user-cell">
-        <div class="user-mini-av" style="background:${c};color:var(--text)">${init}</div>
-        <div><div style="font-size:13px;font-weight:500;">${fn} ${ln}</div><div style="font-size:11px;color:var(--text3);">${u.email}</div></div>
-      </div></td>
-      <td>${u.phone}</td>
-      <td>${u.city}</td>
-      <td><span class="badge ${u.plan === 'monthly' ? 'b-green' : u.plan === 'student' ? 'b-blue' : 'b-gray'}">${u.plan}</span></td>
-      <td>${u.rfidUid ? `<span class="badge b-purple" style="font-size:10px;font-family:monospace;">${u.rfidUid}</span>` : '<span class="badge b-gray">None</span>'}</td>
-      <td style="font-family:var(--ff);font-weight:600;color:var(--accent);">৳${u.walletBalance || 0}</td>
-      <td><span class="badge ${u.isActive ? 'b-green' : 'b-red'}">${u.isActive ? 'Active' : 'Suspended'}</span></td>
-      <td style="color:var(--text3);font-size:12px;">${new Date(u.createdAt).toLocaleDateString('en-GB')}</td>
-      <td><div style="display:flex;gap:6px;">
-        <button class="action-btn ab-blue" onclick="openUserModal('${u._id}')">View</button>
-        <button class="action-btn ${u.isActive ? 'ab-red' : 'ab-green'}" onclick="quickSuspend('${u._id}','${u.isActive}')">${u.isActive ? 'Suspend' : 'Restore'}</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-
-  // Pagination
-  const pg = document.getElementById('userPagination');
-  if (pages <= 1) { pg.innerHTML = ''; return; }
-  pg.innerHTML = `<span class="pg-info">${start + 1}–${Math.min(start + PER_PAGE, total)} of ${total}</span>` +
-    `<button class="pg-btn" onclick="userPage=Math.max(1,userPage-1);renderUsers()" ${userPage === 1 ? 'disabled' : ''}>←</button>` +
-    Array.from({ length: pages }, (_, i) => `<button class="pg-btn ${userPage === i + 1 ? 'active' : ''}" onclick="userPage=${i + 1};renderUsers()">${i + 1}</button>`).join('') +
-    `<button class="pg-btn" onclick="userPage=Math.min(${pages},userPage+1);renderUsers()" ${userPage === pages ? 'disabled' : ''}>→</button>`;
-}
-
-function setUserFilter(f, el) {
-  userFilter = f; userPage = 1;
-  document.querySelectorAll('.filter-tabs .ftab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  renderUsers();
-}
-function filterUsers() { userPage = 1; renderUsers(); }
-
-// ── USER MODAL ──
-async function openUserModal(id) {
-  editingUserId = id;
-  const u = allUsers.find(u => u._id === id); if (!u) return;
-  document.getElementById('userModalTitle').textContent = `${u.firstName} ${u.lastName}`;
-  document.getElementById('muName').value = `${u.firstName} ${u.lastName}`;
-  document.getElementById('muEmail').value = u.email;
-  document.getElementById('muPhone').value = u.phone;
-  document.getElementById('muCity').value = u.city;
-  document.getElementById('muPlan').value = u.plan;
-  document.getElementById('muRfid').value = u.rfidUid || '';
-  document.getElementById('muBalance').value = u.walletBalance || 0;
-  document.getElementById('muStatus').value = u.isActive ? 'Active' : 'Suspended';
-  document.getElementById('muJoined').value = new Date(u.createdAt).toLocaleString('en-GB');
-  document.getElementById('muSuspendBtn').textContent = u.isActive ? 'Suspend User' : 'Restore User';
-  document.getElementById('muSuspendBtn').className = `modal-btn ${u.isActive ? 'mb-danger' : 'mb-primary'}`;
-
-  // Reset to info tab
-  switchModalTab('info', document.querySelector('.mtab'));
-  document.getElementById('userModal').classList.add('show');
-}
-
-function switchModalTab(tab, el) {
-  currentModalTab = tab;
-  document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
-  if (el) el.classList.add('active');
-  document.getElementById('modalTabInfo').style.display = tab === 'info' ? '' : 'none';
-  document.getElementById('modalTabRides').style.display = tab === 'rides' ? '' : 'none';
-  document.getElementById('modalTabRfidLog').style.display = tab === 'rfid-log' ? '' : 'none';
-
-  if (tab === 'rides' && editingUserId) loadUserRides(editingUserId);
-  if (tab === 'rfid-log' && editingUserId) loadUserRfidLogs(editingUserId);
-}
-
-async function loadUserRides(userId) {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  const tbody = document.getElementById('modalRidesTbody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="loader"></div></td></tr>';
-  try {
-    const res = await fetch(`${API}/api/rides/user/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
-    const rides = await res.json();
-    if (!rides.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3);">No rides yet.</td></tr>'; return; }
-    tbody.innerHTML = rides.slice(0, 20).map(r => `<tr>
-      <td style="font-size:12px;color:var(--text3);">${new Date(r.startTime).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
-      <td style="font-family:var(--ff);font-size:13px;color:var(--accent2);">${r.bikeId}</td>
-      <td>${r.duration || (r.status === 'active' ? '<span class="badge b-blue">Active</span>' : '—')}</td>
-      <td style="font-family:var(--ff);font-weight:600;color:var(--accent);">${r.fare ? '৳' + r.fare : '—'}</td>
-      <td><span class="badge ${r.status === 'active' ? 'b-blue' : r.status === 'completed' ? 'b-green' : 'b-red'}">${r.status}</span></td>
-    </tr>`).join('');
-  } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3);">Error loading rides.</td></tr>';
-  }
-}
-
-async function loadUserRfidLogs(userId) {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  const tbody = document.getElementById('modalRfidTbody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="4"><div class="loader"></div></td></tr>';
-  try {
-    const res = await fetch(`${API}/api/admin/rfid-logins/user/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
-    const logs = await res.json();
-    if (!logs.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3);">No RFID logs.</td></tr>'; return; }
-    tbody.innerHTML = logs.slice(0, 20).map(l => `<tr>
-      <td style="font-size:12px;color:var(--text3);">${new Date(l.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
-      <td><span class="badge b-purple" style="font-family:monospace;font-size:10px;">${l.rfidUid}</span></td>
-      <td><span class="badge ${l.status === 'success' ? 'b-green' : 'b-red'}">${l.status === 'success' ? '✅ Success' : '❌ Failed'}</span></td>
-      <td style="font-size:12px;color:var(--text3);">${l.stationId || '—'}</td>
-    </tr>`).join('');
-  } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3);">Error loading logs.</td></tr>';
-  }
-}
-
-async function saveUser() {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  const u = allUsers.find(u => u._id === editingUserId); if (!u) return;
-  const newPlan = document.getElementById('muPlan').value;
-  const newRfid = document.getElementById('muRfid').value.trim().toUpperCase() || null;
-  const newBalance = parseInt(document.getElementById('muBalance').value) || 0;
-
-  try {
-    // Update plan + wallet via new admin endpoint
-    await fetch(`${API}/api/admin/users/${editingUserId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ plan: newPlan, walletBalance: newBalance })
-    });
-
-    // Update RFID if changed and not empty
-    if (newRfid && newRfid !== u.rfidUid) {
-      const rfidRes = await fetch(`${API}/api/auth/rfid`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ userId: editingUserId, rfidUid: newRfid })
-      });
-      if (!rfidRes.ok) {
-        const d = await rfidRes.json();
-        showToast('⚠️ RFID: ' + (d.message || 'Already assigned'));
-        return;
-      }
-    }
-
-    closeModal('userModal');
-    await fetchUsers(token);
-    showToast('✅ User updated successfully.');
-  } catch (e) {
-    showToast('⚠️ Could not save — check backend connection.');
-  }
-}
-
-async function toggleSuspend() {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  const u = allUsers.find(u => u._id === editingUserId); if (!u) return;
-  const newStatus = !u.isActive;
-  try {
-    await fetch(`${API}/api/admin/users/${editingUserId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ isActive: newStatus })
-    });
-    closeModal('userModal');
-    await fetchUsers(token);
-    showToast(newStatus ? '✅ User restored.' : '⚠️ User suspended.');
-  } catch (e) {
-    showToast('⚠️ Could not update — check backend connection.');
-  }
-}
-
-async function quickSuspend(id, isActive) {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  const newStatus = isActive === 'true' ? false : true;
-  try {
-    await fetch(`${API}/api/admin/users/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ isActive: newStatus })
-    });
-    await fetchUsers(token);
-    showToast(newStatus ? '✅ User restored.' : '⚠️ User suspended.');
-  } catch (e) {
-    showToast('⚠️ Could not update — check backend connection.');
-  }
-}
-
-// ── RIDES ──
-let filteredRides = [];
-function renderRides() {
-  let rides = rideFilter === 'all' ? allRides : allRides.filter(r => r.status === rideFilter);
-  filteredRides = rides;
-  document.getElementById('rideTableCount').textContent = `${rides.length} rides`;
-
-  // Metrics
-  const completed = rides.filter(r => r.status === 'completed');
-  document.getElementById('rideMetTotal').textContent = rides.length;
-  document.getElementById('rideMetDist').textContent = completed.reduce((s, r) => s + (r.distanceKm || 0), 0).toFixed(1) + ' km';
-  document.getElementById('rideMetRev').textContent = '৳' + completed.reduce((s, r) => s + (r.fare || 0), 0).toLocaleString();
-
-  const total = rides.length, pages = Math.ceil(total / PER_PAGE);
-  const start = (ridePage - 1) * PER_PAGE, slice = rides.slice(start, start + PER_PAGE);
-  const tbody = document.getElementById('ridesTbody');
-
-  if (!slice.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">No rides found.</td></tr>'; return; }
-  tbody.innerHTML = slice.map(r => {
-    const user = r.userId;
-    const name = user ? `${user.firstName} ${user.lastName}` : 'Unknown';
-    const email = user ? user.email : '';
-    return `<tr>
-      <td style="font-size:12px;color:var(--text3);">${new Date(r.startTime).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
-      <td><div style="font-size:13px;">${name}</div><div style="font-size:11px;color:var(--text3);">${email}</div></td>
-      <td style="font-family:var(--ff);font-size:13px;color:var(--accent2);">${r.bikeId}</td>
-      <td style="font-size:12px;">${r.stationStart || '—'} → ${r.stationEnd || (r.status === 'active' ? '🔴 Ongoing' : '—')}</td>
-      <td>${r.duration || (r.status === 'active' ? '<span class="badge b-blue">Active</span>' : '—')}</td>
-      <td>${r.distanceKm ? r.distanceKm + ' km' : '—'}</td>
-      <td style="font-family:var(--ff);font-weight:600;color:var(--accent);">${r.fare ? '৳' + r.fare : '—'}</td>
-      <td><span class="badge ${r.status === 'active' ? 'b-blue' : r.status === 'completed' ? 'b-green' : 'b-red'}">${r.status}</span></td>
-    </tr>`;
-  }).join('');
-
-  const pg = document.getElementById('ridePagination');
-  if (pages <= 1) { pg.innerHTML = ''; return; }
-  pg.innerHTML = `<span class="pg-info">${start + 1}–${Math.min(start + PER_PAGE, total)} of ${total}</span>` +
-    `<button class="pg-btn" onclick="ridePage=Math.max(1,ridePage-1);renderRides()" ${ridePage === 1 ? 'disabled' : ''}>←</button>` +
-    Array.from({ length: Math.min(pages, 5) }, (_, i) => `<button class="pg-btn ${ridePage === i + 1 ? 'active' : ''}" onclick="ridePage=${i + 1};renderRides()">${i + 1}</button>`).join('') +
-    `<button class="pg-btn" onclick="ridePage=Math.min(${pages},ridePage+1);renderRides()" ${ridePage === pages ? 'disabled' : ''}>→</button>`;
-}
-
-function setRideFilter(f, el) {
-  rideFilter = f; ridePage = 1;
-  document.querySelectorAll('#page-rides .ftab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  renderRides();
-}
-
-// ── RFID ──
-function populateRfidSelect() {
-  const sel = document.getElementById('rfidUserId');
-  const noRfid = allUsers.filter(u => !u.rfidUid);
-  sel.innerHTML = '<option value="">— Select user —</option>' +
-    noRfid.map(u => `<option value="${u._id}">${u.firstName} ${u.lastName} (${u.email})</option>`).join('');
-}
-
-function renderRfidTable() {
-  const linked = allUsers.filter(u => u.rfidUid);
-  document.getElementById('rfidCount').textContent = `${linked.length} cards assigned`;
-  const tbody = document.getElementById('rfidTbody');
-  if (!linked.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text3);">No RFID cards assigned yet.</td></tr>'; return; }
-  tbody.innerHTML = linked.map(u => `<tr>
-    <td><div class="user-cell">
-      <div class="user-mini-av" style="background:rgba(124,92,252,0.15);color:var(--accent3);">${(u.firstName[0] + u.lastName[0]).toUpperCase()}</div>
-      <span style="font-size:13px;">${u.firstName} ${u.lastName}</span>
-    </div></td>
-    <td style="font-size:12px;color:var(--text3);">${u.email}</td>
-    <td><span class="badge b-purple" style="font-family:monospace;letter-spacing:1px;">${u.rfidUid}</span></td>
-    <td><span class="badge ${u.plan === 'monthly' ? 'b-green' : u.plan === 'student' ? 'b-blue' : 'b-gray'}">${u.plan}</span></td>
-    <td style="font-family:var(--ff);font-weight:600;color:var(--accent);">৳${u.walletBalance || 0}</td>
-    <td><button class="action-btn ab-red" onclick="removeRfid('${u._id}')">Remove</button></td>
-  </tr>`).join('');
-}
-
-async function assignRfid() {
-  const userId = document.getElementById('rfidUserId').value;
-  const uid = document.getElementById('rfidUidInput').value.trim().toUpperCase();
-  if (!userId || !uid) { showToast('⚠️ Select a user and enter RFID UID.'); return; }
-  if (allUsers.some(u => u.rfidUid && u.rfidUid.toUpperCase() === uid)) { showToast('⚠️ This RFID UID is already assigned.'); return; }
-
-  const token = localStorage.getItem('kuettrack_admin_token');
-  try {
-    const res = await fetch(`${API}/api/auth/rfid`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ userId, rfidUid: uid })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      document.getElementById('rfidUidInput').value = '';
-      await fetchUsers(token);
-      showToast('✅ RFID card assigned successfully!');
-    } else {
-      showToast('⚠️ ' + (data.message || 'Assignment failed.'));
-    }
-  } catch (e) {
-    showToast('⚠️ Cannot connect to server.');
-  }
-}
-
-async function removeRfid(id) {
-  const token = localStorage.getItem('kuettrack_admin_token');
-  try {
-    await fetch(`${API}/api/admin/users/${id}/rfid`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    await fetchUsers(token);
-    showToast('💳 RFID card removed successfully.');
-  } catch (e) {
-    showToast('⚠️ Could not remove RFID — check backend connection.');
-  }
-}
-
-// ── RFID HISTORY ──
-function renderRfidHistory() {
-  const logs = allRfidLogins;
-  document.getElementById('rfidHistoryCount').textContent = `${logs.length} events`;
-
-  const total = logs.length, pages = Math.ceil(total / PER_PAGE);
-  const start = (rfidHistPage - 1) * PER_PAGE, slice = logs.slice(start, start + PER_PAGE);
-  const tbody = document.getElementById('rfidHistoryTbody');
-
-  if (!slice.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">No RFID history yet.</td></tr>'; return; }
-  tbody.innerHTML = slice.map(l => {
-    const user = l.userId;
-    const name = user ? `${user.firstName} ${user.lastName}` : '<span style="color:var(--text3);">Unknown Card</span>';
-    return `<tr>
-      <td style="font-size:12px;color:var(--text3);">${new Date(l.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
-      <td>${name}</td>
-      <td><span class="badge b-purple" style="font-family:monospace;font-size:10px;">${l.rfidUid}</span></td>
-      <td style="font-size:12px;color:var(--text3);">${l.stationId || 'STATION-001'}</td>
-      <td><span class="badge ${l.status === 'success' ? 'b-green' : l.status === 'invalid_card' ? 'b-red' : 'b-amber'}">${l.status === 'success' ? '✅ Success' : l.status === 'invalid_card' ? '❌ Invalid Card' : '⚠️ Error'}</span></td>
-      <td style="font-size:11px;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.deviceInfo || 'ESP32'}</td>
-    </tr>`;
-  }).join('');
-
-  const pg = document.getElementById('rfidHistPagination');
-  if (pages <= 1) { pg.innerHTML = ''; return; }
-  pg.innerHTML = `<span class="pg-info">${start + 1}–${Math.min(start + PER_PAGE, total)} of ${total}</span>` +
-    `<button class="pg-btn" onclick="rfidHistPage=Math.max(1,rfidHistPage-1);renderRfidHistory()" ${rfidHistPage === 1 ? 'disabled' : ''}>←</button>` +
-    Array.from({ length: Math.min(pages, 5) }, (_, i) => `<button class="pg-btn ${rfidHistPage === i + 1 ? 'active' : ''}" onclick="rfidHistPage=${i + 1};renderRfidHistory()">${i + 1}</button>`).join('') +
-    `<button class="pg-btn" onclick="rfidHistPage=Math.min(${pages},rfidHistPage+1);renderRfidHistory()" ${rfidHistPage === pages ? 'disabled' : ''}>→</button>`;
-}
-
-// ── RFID LIVE POLL ──
-function startRfidPoll() {
-  if (rfidPollInterval) clearInterval(rfidPollInterval);
-  rfidPollInterval = setInterval(pollRfid, 3000);
-}
-
-async function pollRfid() {
-  try {
-    const res = await fetch(`${API}/api/rfid/latest`);
-    if (res.status === 204) return; // No new tap
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.detected) {
-        showRfidDetection(data);
-        // Refresh logins list
-        const token = localStorage.getItem('kuettrack_admin_token');
-        await fetchRfidLogins(token);
-        await fetchRfidStats(token);
-      }
-    }
-  } catch (e) {}
-}
-
-function showRfidDetection(data) {
-  const monitor = document.getElementById('rfidMonitor');
-  const title = document.getElementById('rfidMonitorTitle');
-  const sub = document.getElementById('rfidMonitorSub');
-
-  monitor.classList.add('detected');
-  title.textContent = `✅ ${data.userName || 'User'} tapped in`;
-  sub.textContent = `RFID UID: ${data.uid} · ${new Date(data.timestamp).toLocaleTimeString('en-GB')}`;
-  showToast(`💳 RFID tap: ${data.userName || data.uid}`);
-
-  setTimeout(() => {
-    monitor.classList.remove('detected');
-    title.textContent = 'Waiting for RFID tap...';
-    sub.textContent = 'When a user taps their card, it will appear here instantly.';
-  }, 8000);
-}
-
-// ── ANALYTICS ──
-function updateAnalytics() {
-  const users = allUsers.filter(u => u.role !== 'admin');
-  const active = users.filter(u => u.isActive).length;
-  const completed = allRides.filter(r => r.status === 'completed');
-  const activeRides = allRides.filter(r => r.status === 'active').length;
-  const avgDist = completed.length ? (completed.reduce((s, r) => s + (r.distanceKm || 0), 0) / completed.length).toFixed(1) : 0;
-  const avgFare = completed.length ? Math.round(completed.reduce((s, r) => s + (r.fare || 0), 0) / completed.length) : 0;
-
-  document.getElementById('anaActiveUsers').textContent = active;
-  document.getElementById('anaAvgDist').textContent = avgDist + ' km';
-  document.getElementById('anaAvgFare').textContent = '৳' + avgFare;
-  document.getElementById('anaActiveRides').textContent = activeRides;
-
-  // Plan distribution
-  const plans = { basic: 0, monthly: 0, student: 0 };
-  users.forEach(u => { if (plans[u.plan] !== undefined) plans[u.plan]++; });
-  const total = users.length || 1;
-  document.getElementById('planDistribution').innerHTML = Object.entries(plans).map(([plan, count]) => {
-    const pct = Math.round(count / total * 100);
-    const color = plan === 'monthly' ? 'var(--accent)' : plan === 'student' ? 'var(--accent2)' : 'var(--text3)';
-    return `<div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
-        <span style="text-transform:capitalize;">${plan}</span>
-        <span style="color:${color};">${count} users (${pct}%)</span>
-      </div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${color};"></div></div>
-    </div>`;
-  }).join('');
-
-  // RFID coverage
-  const rfidLinked = users.filter(u => u.rfidUid).length;
-  const rfidPct = Math.round(rfidLinked / total * 100);
-  document.getElementById('rfidCoverage').innerHTML = `
-    <div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
-        <span>RFID Linked</span><span style="color:var(--accent3);">${rfidLinked} users (${rfidPct}%)</span>
-      </div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${rfidPct}%;background:var(--accent3);"></div></div>
-    </div>
-    <div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
-        <span>No RFID</span><span style="color:var(--text3);">${total - rfidLinked} users (${100 - rfidPct}%)</span>
-      </div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${100 - rfidPct}%;background:var(--text3);"></div></div>
-    </div>
-    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;font-size:13px;">
-        <span style="color:var(--text3);">Total RFID taps (all time)</span>
-        <span style="font-family:var(--ff);font-weight:700;color:var(--accent3);">${allRfidLogins.length}</span>
-      </div>
-    </div>
-  `;
-
-  // Revenue breakdown
-  const totalRev = completed.reduce((s, r) => s + (r.fare || 0), 0);
-  const activeRevPotential = allRides.filter(r => r.status === 'active').length;
-  document.getElementById('revenueBreakdown').innerHTML = `
-    <div class="stat-row"><span class="stat-key">Total Revenue Collected</span><span class="stat-val" style="color:var(--accent);">৳${totalRev.toLocaleString()}</span></div>
-    <div class="stat-row"><span class="stat-key">Completed Rides</span><span class="stat-val">${completed.length}</span></div>
-    <div class="stat-row"><span class="stat-key">Average Fare per Ride</span><span class="stat-val">৳${avgFare}</span></div>
-    <div class="stat-row"><span class="stat-key">Active Rides (ongoing)</span><span class="stat-val" style="color:var(--accent2);">${activeRevPotential}</span></div>
-    <div class="stat-row"><span class="stat-key">Total Distance (all rides)</span><span class="stat-val">${completed.reduce((s, r) => s + (r.distanceKm || 0), 0).toFixed(1)} km</span></div>
-  `;
-}
-
-// ── NAVIGATION ──
+// ─── Page navigation ─────────────────────────────────────────────────────────
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   if (btn) btn.classList.add('active');
-  const titles = {
-    overview: 'Overview', users: 'User Management',
-    rides: 'All Rides', rfid: 'RFID Management',
-    'rfid-history': 'RFID Login History',
-    gps: 'Live GPS Tracking',
-    analytics: 'Analytics'
-  };
+  const titles = {overview:'Overview',livemap:'Live Map',users:'Users',rides:'Rides',rfidlogs:'RFID Logs'};
   document.getElementById('topbarTitle').textContent = titles[id] || id;
-  window.scrollTo(0, 0);
+
+  // Page-specific init
+  if (id === 'livemap') { initFullAdminMap(); loadFullMapData(); }
+  if (id === 'users')   loadUsers();
+  if (id === 'rides')   loadRides();
+  if (id === 'rfidlogs') loadRfidLogs();
 }
 
-// ── UTILITIES ──
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-let toastTimeout;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 3500);
+// ─── Sidebar toggle ──────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarBackdrop').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('show');
 }
 
+// ─── Logout ──────────────────────────────────────────────────────────────────
 function logout() {
-  clearInterval(rfidPollInterval);
-  clearInterval(adminGpsPollTimer);
-  localStorage.removeItem('kuettrack_admin_token');
-  localStorage.removeItem('kuettrack_admin');
-  window.location.href = 'admin-login.html';
+  localStorage.removeItem('kuettrack_token');
+  localStorage.removeItem('kuettrack_user');
+  window.location.href = 'index.html';
 }
 
-// Close modal on overlay click
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
-});
+// ─── Toast ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
 
-// ── ADMIN GPS — LEAFLET (ESP32 + NEO-6M via WiFi) ────────
-// ESP32 reads GPS via NEO-6M and POSTs coordinates to /api/gps/update over WiFi
-// Admin dashboard polls /api/gps/all/active every 4s — Leaflet renders all live bikes
-// OpenStreetMap tiles — 100% free, zero API key required
+// ─── Modal helpers ───────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function openAddUserModal() { openModal('addUserModal'); }
 
-// ─── Station data — loaded from /api/stations on init ─────────────────────
-let ADMIN_STATIONS = [
-  { id:'S1', name:'KUET Main Gate',   addr:'KU Engineering Road',  lat:22.89970, lon:89.50100, bikes:8,  status:'available' },
-  { id:'S2', name:'KUET Campus Hub',  addr:'Inside KUET Campus',   lat:22.90318, lon:89.50348, bikes:5,  status:'available' },
-  { id:'S3', name:'Boyra Market',     addr:'Boyra, Khulna',        lat:22.91520, lon:89.51430, bikes:3,  status:'few'       },
-  { id:'S4', name:'Fulbari Gate',     addr:'Fulbari Road, Khulna', lat:22.88200, lon:89.49000, bikes:6,  status:'available' },
-  { id:'S5', name:'Khulna Rail Gate', addr:'Railway Station Area', lat:22.84300, lon:89.54500, bikes:0,  status:'empty'     },
-];
+// ─── Refresh all ─────────────────────────────────────────────────────────────
+async function refreshAll() {
+  await Promise.all([
+    loadOverviewStats(),
+    loadRecentUsers(),
+    pollActiveRiders(),
+  ]);
+}
 
-async function loadAdminStations() {
+// ─── Overview Stats ──────────────────────────────────────────────────────────
+async function loadOverviewStats() {
   try {
-    const res = await fetch(API + '/api/stations');
-    if (!res.ok) return;
-    const data = await res.json();
-    ADMIN_STATIONS = data.map(s => ({
-      id: s.id, name: s.name, addr: s.address,
-      lat: s.lat, lon: s.lon, bikes: s.availableBikes, status: s.status
-    }));
-    // If map already open, refresh markers
-    if (adminGpsMapInited) {
-      adminGpsLeafMap.eachLayer(l => { if (l._stationMarker) adminGpsLeafMap.removeLayer(l); });
-      addAdminStationMarkers();
+    const [usersRes, ridesRes] = await Promise.all([
+      fetch(`${API}/api/admin/users`, { headers: { Authorization: `Bearer ${adminToken}` } }),
+      fetch(`${API}/api/rides`, { headers: { Authorization: `Bearer ${adminToken}` } }),
+    ]);
+    if (!usersRes.ok || !ridesRes.ok) return;
+    const users = await usersRes.json();
+    const rides = await ridesRes.json();
+
+    const activeUsers  = users.filter(u => u.isActive).length;
+    const suspended    = users.filter(u => !u.isActive).length;
+    const rfidLinked   = users.filter(u => u.rfidUid).length;
+    const activeRides  = rides.filter(r => r.status === 'active').length;
+    const totalRevenue = rides.filter(r => r.status === 'completed').reduce((s, r) => s + (r.fare || 0), 0);
+    const completedRides = rides.filter(r => r.status === 'completed').length;
+
+    document.getElementById('metUsers').textContent    = users.length;
+    document.getElementById('metUsersSub').textContent = `${activeUsers} active, ${suspended} suspended`;
+    document.getElementById('metRides').textContent    = rides.length;
+    document.getElementById('metRidesSub').textContent = `${activeRides} active now`;
+    document.getElementById('metRfid').textContent     = `${rfidLinked}/${users.length}`;
+    document.getElementById('metRevenue').textContent  = '৳' + totalRevenue.toLocaleString();
+    document.getElementById('metRevenueSub').textContent = `from ${completedRides} rides`;
+
+    // Active badge
+    if (activeRides > 0) {
+      const badge = document.getElementById('activeRidersBadge');
+      badge.textContent = activeRides + ' Live';
+      badge.style.display = '';
     }
-  } catch(e) { console.warn('Admin stations fallback to defaults.', e); }
+  } catch(e) { console.warn('Stats error:', e); }
 }
 
-let adminGpsLeafMap   = null;
-let adminGpsMarkers   = {};    // { userId: marker }
-let adminGpsMapInited = false;
-let adminGpsPollTimer = null;
-let adminActiveLocations = []; // All active locations
-
-function addAdminStationMarkers() {
-  if (!adminGpsLeafMap) return;
-  ADMIN_STATIONS.forEach(s => {
-    const c = s.status==='available'?'#00e5a0':s.status==='few'?'#ffab00':'#5a6175';
-    const icon = L.divIcon({ className:'', iconSize:[16,16], iconAnchor:[8,8],
-      html:`<div style="width:16px;height:16px;border-radius:50%;background:${c};border:2px solid #06090f;box-shadow:0 0 8px ${c}88;"></div>`
-    });
-    const m = L.marker([s.lat,s.lon], { icon }).addTo(adminGpsLeafMap)
-      .bindPopup(`<b>🏪 ${s.name}</b><br><span style="color:#aaa;">${s.addr||''}</span><br><b style="color:${c}">${s.bikes??0} bikes available</b>`);
-    m._stationMarker = true;
-  });
+// ─── Recent Users ────────────────────────────────────────────────────────────
+async function loadRecentUsers() {
+  try {
+    const res = await fetch(`${API}/api/admin/users`, { headers: { Authorization: `Bearer ${adminToken}` } });
+    if (!res.ok) return;
+    const users = await res.json();
+    const recent = users.slice(0, 6);
+    const tbody = document.getElementById('recentUsersTbody');
+    if (!recent.length) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text3);">No users yet</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = recent.map(u => {
+      const initials = ((u.firstName||'?')[0] + (u.lastName||'?')[0]).toUpperCase();
+      const planClass = u.plan === 'monthly' ? 'plan-monthly' : u.plan === 'student' ? 'plan-student' : 'plan-basic';
+      const joined = new Date(u.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px;">
+          <div class="user-row-avatar">${initials}</div>
+          <div>
+            <div style="font-weight:500;">${u.firstName} ${u.lastName}</div>
+            <div style="font-size:11px;color:var(--text3);">${u.email}</div>
+          </div>
+        </div></td>
+        <td><span class="plan-badge ${planClass}">${u.plan}</span></td>
+        <td>${u.rfidUid ? `<span style="color:var(--accent);font-size:12px;font-family:monospace;">${u.rfidUid}</span>` : '<span style="color:var(--text3);">—</span>'}</td>
+        <td style="color:var(--text3);">${joined}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {}
 }
 
-function createAdminGpsMap(lat, lon) {
-  if (adminGpsMapInited) return;
-  // Default to KUET Main Gate if no GPS fix yet
-  const mapLat = (lat && !isNaN(lat)) ? lat : 22.89970;
-  const mapLon = (lon && !isNaN(lon)) ? lon : 89.50100;
+// ─── Poll Active Riders (GPS + Rides) ────────────────────────────────────────
+async function pollActiveRiders() {
+  try {
+    // Get active rides
+    const ridesRes = await fetch(`${API}/api/rides`, { headers: { Authorization: `Bearer ${adminToken}` } });
+    if (!ridesRes.ok) return;
+    const allRides = await ridesRes.json();
+    const activeRides = allRides.filter(r => r.status === 'active');
 
-  adminGpsLeafMap = L.map('adminGpsMapDiv', { zoomControl: true }).setView([mapLat, mapLon], 14);
+    // Try to get GPS for each active rider
+    const ridersWithGps = await Promise.all(activeRides.map(async (ride) => {
+      const userId = ride.userId?._id || ride.userId;
+      if (!userId) return null;
+      try {
+        const gpsRes = await fetch(`${API}/api/gps/user/${userId}`, {
+          headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        if (gpsRes.ok) {
+          const gps = await gpsRes.json();
+          const age = Date.now() - new Date(gps.timestamp).getTime();
+          return {
+            userId: String(userId),
+            userName: ride.userId?.firstName
+              ? `${ride.userId.firstName} ${ride.userId.lastName}`
+              : 'Unknown',
+            email: ride.userId?.email || '',
+            bikeId: ride.bikeId,
+            stationStart: ride.stationStart,
+            startTime: ride.startTime,
+            latitude: gps.latitude,
+            longitude: gps.longitude,
+            speed: gps.speed || 0,
+            satellites: gps.satellites || 0,
+            timestamp: gps.timestamp,
+            ageMs: age
+          };
+        }
+      } catch {}
+      // No GPS data available for this rider
+      return {
+        userId: String(userId),
+        userName: ride.userId?.firstName
+          ? `${ride.userId.firstName} ${ride.userId.lastName}`
+          : 'Unknown',
+        email: ride.userId?.email || '',
+        bikeId: ride.bikeId,
+        stationStart: ride.stationStart,
+        startTime: ride.startTime,
+        latitude: null,
+        longitude: null,
+        speed: 0,
+        satellites: 0,
+        timestamp: null,
+        ageMs: null
+      };
+    }));
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
-  }).addTo(adminGpsLeafMap);
+    activeRidersData = ridersWithGps.filter(Boolean);
+    renderActiveRidersList(activeRidersData);
+    updateMapWithRiders(activeRidersData);
+    updateActiveRidersCount(activeRidersData.length);
 
-  addAdminStationMarkers();
-  adminGpsMapInited = true;
-  setTimeout(() => adminGpsLeafMap.invalidateSize(), 200);
+  } catch(e) { console.warn('pollActiveRiders error:', e); }
 }
 
-function addUserMarker(userId, userName, lat, lon, speed) {
-  if (!adminGpsMapInited) return;
-  
-  // Remove old marker if exists
-  if (adminGpsMarkers[userId]) {
-    adminGpsLeafMap.removeLayer(adminGpsMarkers[userId]);
+// ─── Render Active Riders Sidebar ────────────────────────────────────────────
+function renderActiveRidersList(riders) {
+  const listEl = document.getElementById('activeRidersList');
+  const fullEl = document.getElementById('fullActiveRidersList');
+  const countEl = document.getElementById('activeCountLabel');
+  const fullCountEl = document.getElementById('fullActiveCountLabel');
+
+  if (countEl) countEl.textContent = riders.length + ' on road';
+  if (fullCountEl) fullCountEl.textContent = riders.length + ' on road';
+
+  const html = riders.length === 0
+    ? `<div class="no-riders"><div class="no-riders-icon">🚲</div><div>No active rides right now</div></div>`
+    : riders.map(r => {
+        const elapsed = r.startTime ? Math.floor((Date.now() - new Date(r.startTime)) / 1000) : 0;
+        const mins = Math.floor(elapsed / 60), secs = elapsed % 60;
+        const initials = r.userName.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+        const hasGps = r.latitude != null;
+        return `<div class="rider-card ${hasGps?'':'opacity-60'}" onclick="focusRider('${r.userId}',${r.latitude},${r.longitude})">
+          <div class="rider-top">
+            <div class="rider-avatar">${initials}</div>
+            <div>
+              <div class="rider-name">${r.userName}</div>
+              <div class="rider-email">${r.bikeId}</div>
+            </div>
+            <div class="live-tag"><div class="live-tag-dot"></div>LIVE</div>
+          </div>
+          <div class="rider-stats">
+            <div class="rider-stat"><div class="rider-stat-val">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div><div class="rider-stat-label">Duration</div></div>
+            <div class="rider-stat"><div class="rider-stat-val">${hasGps ? r.speed.toFixed(1)+' km/h' : '—'}</div><div class="rider-stat-label">Speed</div></div>
+          </div>
+        </div>`;
+      }).join('');
+
+  if (listEl) listEl.innerHTML = html;
+  if (fullEl) fullEl.innerHTML = html;
+}
+
+// ─── Update Map With Riders ───────────────────────────────────────────────────
+function updateMapWithRiders(riders) {
+  const ridersWithGps = riders.filter(r => r.latitude != null && r.longitude != null);
+
+  if (ridersWithGps.length > 0) {
+    // Show map, hide waiting state
+    document.getElementById('adminLiveMap').style.display = '';
+    document.getElementById('mapWaiting').style.display = 'none';
+
+    if (!mapInitialized) {
+      initAdminMap();
+    }
+
+    if (adminMap) {
+      // Remove old rider markers not in current data
+      Object.keys(riderMarkers).forEach(uid => {
+        if (!ridersWithGps.find(r => r.userId === uid)) {
+          adminMap.removeLayer(riderMarkers[uid]);
+          delete riderMarkers[uid];
+        }
+      });
+
+      ridersWithGps.forEach(r => {
+        const lat = r.latitude, lng = r.longitude;
+        updateRiderMarkerOnMap(adminMap, riderMarkers, r, lat, lng);
+      });
+
+      // Update trail for single rider (most common case)
+      if (ridersWithGps.length === 1) {
+        fetchAndDrawTrail(adminMap, ridersWithGps[0].userId);
+      }
+
+      // Update live dot
+      setMapOnline(true);
+      lastGpsTs = Date.now();
+    }
+  } else if (ridersWithGps.length === 0 && riders.length > 0) {
+    // Active rides but no GPS yet
+    document.getElementById('adminLiveMap').style.display = '';
+    document.getElementById('mapWaiting').style.display = 'none';
+    if (!mapInitialized) initAdminMap();
+    setMapStatus('🔴 Riders active — waiting for GPS fix…', false);
+  } else {
+    // No active rides at all
+    document.getElementById('adminLiveMap').style.display = 'none';
+    document.getElementById('mapWaiting').style.display = '';
+    setMapOnline(false);
   }
 
-  // Create unique color per user (based on userId hash)
-  const colors = ['#00e5a0', '#0088ff', '#7c5cfc', '#ffab00', '#ff5050'];
-  const colorIndex = userId.charCodeAt(userId.length - 1) % colors.length;
-  const color = colors[colorIndex];
+  // Update status labels
+  const label = document.getElementById('activeRidesLabel');
+  if (label) {
+    label.textContent = riders.length + ' active ride' + (riders.length !== 1 ? 's' : '');
+    const dot = document.getElementById('activeRidesDot');
+    if (dot) {
+      if (riders.length > 0) { dot.style.background = 'var(--red)'; dot.style.animation = 'pulse 2s infinite'; }
+      else { dot.style.background = 'var(--text3)'; dot.style.animation = 'none'; }
+    }
+  }
 
-  const icon = L.divIcon({
+  // Full map page
+  document.getElementById('fullMapActiveCount').textContent = riders.length;
+
+  if (ridersWithGps.length > 0) {
+    const r = ridersWithGps[0];
+    document.getElementById('fullMapGpsFix').textContent = 'Online';
+    document.getElementById('fullMapGpsFix').style.color = 'var(--accent)';
+    document.getElementById('fullMapSpeed').textContent = r.speed.toFixed(1) + ' km/h';
+    document.getElementById('fullMapSats').textContent  = r.satellites;
+    document.getElementById('detailLat').textContent    = r.latitude.toFixed(6);
+    document.getElementById('detailLon').textContent    = r.longitude.toFixed(6);
+    document.getElementById('detailSpeed').textContent  = r.speed.toFixed(1) + ' km/h';
+    document.getElementById('detailSats').textContent   = r.satellites;
+    const age = r.ageMs != null ? Math.floor(r.ageMs/1000) + 's ago' : '—';
+    document.getElementById('fullMapGpsAge').textContent = age;
+    document.getElementById('fullMapLiveDot').style.background = 'var(--accent)';
+    document.getElementById('lastGpsAge').textContent = '🟢 ' + age;
+  }
+}
+
+// ─── Update rider marker on a specific map ────────────────────────────────────
+function updateRiderMarkerOnMap(map, markers, rider, lat, lng) {
+  const initials = rider.userName.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  const riderIcon = L.divIcon({
     className: '',
     html: `<div style="
-      width:32px;height:32px;border-radius:50%;
-      background:${color};border:3px solid #06090f;
+      position:relative;width:44px;height:44px;
+      background:linear-gradient(135deg,#00e5a0,#0088ff);
+      border:3px solid #fff;border-radius:50%;
       display:flex;align-items:center;justify-content:center;
-      font-size:14px;box-shadow:0 0 12px rgba(0,229,160,0.5);">🚲</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
+      font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#06090f;
+      box-shadow:0 0 0 6px rgba(0,229,160,0.25);
+      animation:ripple 2s infinite;
+    ">${initials}<div style="
+      position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+      width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+      border-top:8px solid #00e5a0;
+    "></div></div>
+    <style>@keyframes ripple{0%{box-shadow:0 0 0 0 rgba(0,229,160,0.4);}70%{box-shadow:0 0 0 14px rgba(0,229,160,0);}100%{box-shadow:0 0 0 0 rgba(0,229,160,0);}}</style>`,
+    iconSize: [44, 52],
+    iconAnchor: [22, 52],
+    popupAnchor: [0, -56]
   });
 
-  const marker = L.marker([lat, lon], { icon })
-    .addTo(adminGpsLeafMap)
-    .bindPopup(`<b>${userName}</b><br>Speed: ${speed.toFixed(1)} km/h`);
+  const elapsed = rider.startTime ? Math.floor((Date.now() - new Date(rider.startTime))/1000) : 0;
+  const mins = Math.floor(elapsed/60), secs = elapsed%60;
+  const popupHtml = `
+    <div class="rider-popup">
+      <h4>🚴 ${rider.userName}</h4>
+      <p>Bike: <strong>${rider.bikeId}</strong></p>
+      <p>From: ${rider.stationStart}</p>
+      <p>Duration: ${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</p>
+      <div class="speed">⚡ ${rider.speed.toFixed(1)} km/h &nbsp;|&nbsp; 🛰️ ${rider.satellites} sats</div>
+    </div>`;
 
-  adminGpsMarkers[userId] = marker;
-}
-
-function updateAdminGpsViewport() {
-  if (!adminGpsMapInited || !adminActiveLocations.length) return;
-  
-  // Fit map to all markers
-  const group = new L.featureGroup(Object.values(adminGpsMarkers));
-  if (group.getLayers().length > 0) {
-    adminGpsLeafMap.fitBounds(group.getBounds().pad(0.1), { maxZoom: 16 });
+  if (markers[rider.userId]) {
+    markers[rider.userId].setLatLng([lat, lng]);
+    markers[rider.userId].getPopup()?.setContent(popupHtml);
+  } else {
+    const marker = L.marker([lat, lng], { icon: riderIcon, zIndexOffset: 1000 })
+      .addTo(map)
+      .bindPopup(popupHtml, { className: 'admin-popup' });
+    markers[rider.userId] = marker;
   }
 }
 
-function setAdminGpsOnline(count) {
-  document.getElementById('adminGpsDot').style.background = 'var(--accent)';
-  document.getElementById('adminGpsDot').style.boxShadow = '0 0 6px var(--accent)';
-  document.getElementById('adminGpsLabel').textContent = `${count} vehicle${count !== 1 ? 's' : ''} online`;
-  document.getElementById('adminGpsLabel').style.color = 'var(--accent)';
-  document.getElementById('adminGpsStatus').textContent = '🛰️ Live';
-  document.getElementById('adminGpsStatus').style.color = 'var(--accent)';
-  document.getElementById('adminGpsSub').textContent = 'Real-time tracking active';
+// ─── Init overview map ────────────────────────────────────────────────────────
+function initAdminMap() {
+  if (mapInitialized) return;
+  if (!document.getElementById('adminLiveMap')) return;
+
+  const kuet = [22.9018, 89.5025];
+  adminMap = L.map('adminLiveMap', {
+    center: kuet,
+    zoom: 14,
+    zoomControl: true,
+    attributionControl: false
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    subdomains: 'abcd'
+  }).addTo(adminMap);
+
+  addStationMarkersToMap(adminMap, stationMarkers);
+  mapInitialized = true;
 }
 
-function setAdminGpsOffline() {
-  document.getElementById('adminGpsDot').style.background = 'var(--text3)';
-  document.getElementById('adminGpsDot').style.boxShadow = 'none';
-  document.getElementById('adminGpsLabel').textContent = 'Offline';
-  document.getElementById('adminGpsLabel').style.color = 'var(--text3)';
-  document.getElementById('adminGpsStatus').textContent = '⚠️ Offline';
-  document.getElementById('adminGpsStatus').style.color = 'var(--amber)';
-  document.getElementById('adminGpsSub').textContent = 'No active vehicles';
+// ─── Init full page map ───────────────────────────────────────────────────────
+function initFullAdminMap() {
+  if (fullMapInitialized) return;
+  const el = document.getElementById('fullAdminMap');
+  if (!el) return;
+
+  const kuet = [22.9018, 89.5025];
+  fullAdminMap = L.map('fullAdminMap', {
+    center: kuet,
+    zoom: 14,
+    zoomControl: true,
+    attributionControl: false
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    subdomains: 'abcd'
+  }).addTo(fullAdminMap);
+
+  addStationMarkersToMap(fullAdminMap, stationMarkersFull);
+  fullMapInitialized = true;
+  loadFullMapData();
 }
 
-function renderAdminGpsUsersList(locations) {
-  document.getElementById('adminTrailCount').textContent = locations.length + ' active vehicle' + (locations.length !== 1 ? 's' : '');
-  const tbody = document.getElementById('adminGpsTrailBody');
-  if (!locations.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3);">No active vehicles tracking.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = locations.map((loc, i) => `
-    <tr>
-      <td style="color:var(--text3);">${i + 1}</td>
-      <td style="color:var(--accent);">${loc.latitude.toFixed(5)}</td>
-      <td style="color:var(--accent2);">${loc.longitude.toFixed(5)}</td>
-      <td>${loc.speed.toFixed(1)}</td>
-      <td>${loc.satellites || '—'}</td>
-      <td style="color:var(--text3);font-size:12px;">
-        <strong>${loc.userName || 'Unknown'}</strong><br/>
-        ${new Date(loc.timestamp).toLocaleTimeString()}
-      </td>
-    </tr>`).join('');
-}
-
-async function pollAdminGps() {
-  try {
-    const token = localStorage.getItem('kuettrack_admin_token');
-    const res = await fetch(API + '/api/gps/all/active', {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    
-    if (!res.ok) {
-      if (res.status === 403) {
-        showToast('🔐 Admin access required');
-        return;
+// ─── Load Full Map Data ───────────────────────────────────────────────────────
+function loadFullMapData() {
+  if (activeRidersData.length > 0) {
+    const ridersWithGps = activeRidersData.filter(r => r.latitude != null);
+    ridersWithGps.forEach(r => {
+      if (fullAdminMap) {
+        updateRiderMarkerOnMap(fullAdminMap, riderMarkersFull, r, r.latitude, r.longitude);
       }
-      setAdminGpsOffline();
-      return;
-    }
-    
-    const locations = await res.json();
-    adminActiveLocations = locations;
-    
-    if (!locations.length) {
-      setAdminGpsOffline();
-      renderAdminGpsUsersList([]);
-      return;
-    }
-    
-    // Initialize map with first location
-    if (!adminGpsMapInited) {
-      createAdminGpsMap(locations[0].latitude, locations[0].longitude);
-    }
-    
-    // Add/update markers for all locations
-    locations.forEach(loc => {
-      const bikeKey = loc.deviceId || String(loc.userId);
-      addAdminMqttMarker(bikeKey, loc.userName, loc.latitude, loc.longitude, loc.speed||0, loc.satellites||0);
-      upsertTrailRow(bikeKey, loc.userName, loc.latitude, loc.longitude, loc.speed||0, loc.satellites||0, new Date(loc.timestamp).getTime());
     });
-    
-    updateAdminGpsViewport();
-    setAdminGpsOnline(locations.length);
-    renderAdminGpsUsersList(locations);
-    
-    // Update metrics with first vehicle detail
-    const first = locations[0];
-    document.getElementById('adminGpsLat').textContent = first.latitude.toFixed(5);
-    document.getElementById('adminGpsLon').textContent = first.longitude.toFixed(5);
-    document.getElementById('adminGpsSats').textContent = first.satellites || '—';
-    const ago = Math.floor((Date.now() - new Date(first.timestamp)) / 1000);
-    document.getElementById('adminGpsAge').textContent = ago < 3 ? 'Just now' : `${ago}s ago`;
-    
-  } catch (e) {
-    console.error('Admin GPS poll error:', e);
-    setAdminGpsOffline();
+    if (ridersWithGps.length === 1 && fullAdminMap) {
+      fetchAndDrawTrail(fullAdminMap, ridersWithGps[0].userId, true);
+      fullAdminMap.setView([ridersWithGps[0].latitude, ridersWithGps[0].longitude], 16);
+    }
   }
 }
 
-function startAdminGpsPoll() {
-  if (adminGpsPollTimer) return;
+// ─── Stations on map ─────────────────────────────────────────────────────────
+const STATIONS = [
+  { id:'S1', name:'KUET Main Gate',   lat:22.89970, lon:89.50100, bikes:8  },
+  { id:'S2', name:'KUET Campus Hub',  lat:22.90318, lon:89.50348, bikes:5  },
+  { id:'S3', name:'Boyra Market',     lat:22.91520, lon:89.51430, bikes:3  },
+  { id:'S4', name:'Fulbari Gate',     lat:22.88200, lon:89.49000, bikes:6  },
+  { id:'S5', name:'Khulna Rail Gate', lat:22.84300, lon:89.54500, bikes:0  },
+];
 
-  // Create map immediately (centered on KUET) — don't wait for GPS fix
-  if (!adminGpsMapInited) createAdminGpsMap(22.89970, 89.50100);
-  setTimeout(() => { if (adminGpsLeafMap) adminGpsLeafMap.invalidateSize(); }, 300);
-
-  pollAdminGps();
-  adminGpsPollTimer = setInterval(pollAdminGps, 8000);   // HTTP fallback every 8s
-
-  // MQTT: real-time GPS updates
-  initAdminMqtt();
+function addStationMarkersToMap(map, arr) {
+  STATIONS.forEach(s => {
+    const color = s.bikes === 0 ? '#ff5050' : s.bikes <= 2 ? '#ffab00' : '#00e5a0';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:12px;height:12px;border-radius:50%;
+        background:${color};border:2px solid #06090f;
+        box-shadow:0 0 0 3px ${color}44;
+      "></div>`,
+      iconSize:[12,12], iconAnchor:[6,6]
+    });
+    const m = L.marker([s.lat, s.lon], { icon })
+      .addTo(map)
+      .bindPopup(`<div style="font-size:13px;"><strong>${s.name}</strong><br/>🚲 ${s.bikes} bikes available</div>`);
+    arr.push(m);
+  });
 }
 
-// ── Admin MQTT client — real-time GPS for all active bikes ──────────────────
-let adminMqttClient    = null;
-const adminMqttCache   = {};   // bikeId → { lat, lon, speed, satellites, timestamp, deviceId }
+// ─── Fetch & Draw GPS Trail ───────────────────────────────────────────────────
+async function fetchAndDrawTrail(map, userId, isFull = false) {
+  try {
+    const res = await fetch(`${API}/api/gps/user/${userId}/trail?limit=200`, {
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    if (!res.ok) return;
+    const trail = await res.json();
+    if (!trail || trail.length < 2) return;
 
-function initAdminMqtt() {
-  if (adminMqttClient) return;
-  if (typeof mqtt === "undefined") { console.warn("[AdminMQTT] library not loaded"); return; }
+    const latlngs = trail.map(p => [p.latitude, p.longitude]);
+    if (isFull) {
+      if (trailPolylineFull) map.removeLayer(trailPolylineFull);
+      trailPolylineFull = L.polyline(latlngs, {
+        color: '#00e5a0', weight: 3, opacity: 0.7,
+        dashArray: '6 4'
+      }).addTo(map);
+    } else {
+      if (trailPolyline) map.removeLayer(trailPolyline);
+      trailPolyline = L.polyline(latlngs, {
+        color: '#00e5a0', weight: 3, opacity: 0.7,
+        dashArray: '6 4'
+      }).addTo(map);
+    }
+  } catch {}
+}
 
-  adminMqttClient = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
-    clientId: "kuettrack-admin-" + Math.random().toString(16).slice(2,8),
-    clean: true,
-    reconnectPeriod: 5000,
-    connectTimeout: 12000,
+// ─── Focus on a rider ────────────────────────────────────────────────────────
+function focusRider(userId, lat, lng) {
+  if (!lat || !lng) { showToast('⚠️ No GPS fix for this rider yet'); return; }
+  // Focus overview map if visible
+  if (adminMap && mapInitialized) {
+    adminMap.setView([lat, lng], 17, { animate: true });
+    if (riderMarkers[userId]) riderMarkers[userId].openPopup();
+  }
+  // Focus full map
+  if (fullAdminMap && fullMapInitialized) {
+    fullAdminMap.setView([lat, lng], 17, { animate: true });
+    if (riderMarkersFull[userId]) riderMarkersFull[userId].openPopup();
+  }
+}
+
+// ─── Center map ──────────────────────────────────────────────────────────────
+function centerAdminMap() {
+  const ridersWithGps = activeRidersData.filter(r => r.latitude != null);
+  if (ridersWithGps.length > 0) {
+    const r = ridersWithGps[0];
+    if (adminMap) adminMap.setView([r.latitude, r.longitude], 16, { animate: true });
+    if (fullAdminMap) fullAdminMap.setView([r.latitude, r.longitude], 16, { animate: true });
+  } else {
+    const kuet = [22.9018, 89.5025];
+    if (adminMap) adminMap.setView(kuet, 14, { animate: true });
+    if (fullAdminMap) fullAdminMap.setView(kuet, 14, { animate: true });
+  }
+}
+
+// ─── Status helpers ──────────────────────────────────────────────────────────
+function setMapOnline(online) {
+  const dot = document.getElementById('overviewMapLiveDot');
+  const lbl = document.getElementById('overviewMapStatus');
+  const fullDot = document.getElementById('fullMapLiveDot');
+  if (dot) dot.style.background = online ? 'var(--accent)' : 'var(--text3)';
+  if (lbl) lbl.textContent = online ? '● Live GPS' : 'No active rides';
+  if (fullDot) fullDot.style.background = online ? 'var(--accent)' : 'var(--text3)';
+}
+function setMapStatus(msg, online) {
+  const lbl = document.getElementById('overviewMapStatus');
+  if (lbl) lbl.textContent = msg;
+  setMapOnline(online);
+}
+function updateActiveRidersCount(n) {
+  const badge = document.getElementById('activeRidersBadge');
+  if (!badge) return;
+  if (n > 0) { badge.textContent = n + ' Live'; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
+  document.getElementById('fullMapActiveCount').textContent = n;
+}
+
+// ─── MQTT Admin Client ────────────────────────────────────────────────────────
+function initMqttAdmin() {
+  if (typeof mqtt === 'undefined') { console.warn('[MQTT] library not loaded'); return; }
+  const BROKER_WSS = 'wss://broker.hivemq.com:8884/mqtt';
+  const clientId   = 'kuettrack-admin-' + Math.random().toString(16).slice(2, 8);
+
+  try {
+    mqttAdmin = mqtt.connect(BROKER_WSS, {
+      clientId, clean: true,
+      reconnectPeriod: 4000,
+      connectTimeout: 10000,
+    });
+  } catch(e) { console.warn('[MQTT] connect error:', e); return; }
+
+  mqttAdmin.on('connect', () => {
+    console.log('[MQTT Admin] connected');
+    mqttConnected = true;
+    mqttAdmin.subscribe('kuettrack/+/gps', { qos: 1 });
+    mqttAdmin.subscribe('kuettrack/+/status', { qos: 0 });
+    setMqttStatus(true);
   });
+  mqttAdmin.on('error',   e => { console.warn('[MQTT Admin]', e.message); setMqttStatus(false); });
+  mqttAdmin.on('offline', () => { mqttConnected = false; setMqttStatus(false); });
+  mqttAdmin.on('reconnect', () => console.log('[MQTT Admin] reconnecting…'));
 
-  adminMqttClient.on("connect", () => {
-    console.log("[AdminMQTT] connected");
-    adminMqttClient.subscribe("kuettrack/+/gps",    { qos: 1 });
-    adminMqttClient.subscribe("kuettrack/+/status", { qos: 0 });
-  });
-  adminMqttClient.on("error",   e => console.warn("[AdminMQTT]", e.message));
-  adminMqttClient.on("offline", () => console.warn("[AdminMQTT] offline"));
-
-  adminMqttClient.on("message", async (topic, payload) => {
+  mqttAdmin.on('message', (topic, payload) => {
     try {
-      const parts   = topic.split("/");
-      const bikeId  = parts[1];
+      const d = JSON.parse(payload.toString());
+      const parts = topic.split('/');
       const msgType = parts[2];
-      const d       = JSON.parse(payload.toString());
 
-      if (msgType === "gps") {
+      if (msgType === 'gps' && d.lat != null && d.lon != null) {
         const lat = parseFloat(d.lat), lon = parseFloat(d.lon);
-        if (!lat || !lon || d.hasFix === false) return;
+        if (!lat && !lon) return;
+        lastGpsTs = Date.now();
 
-        adminMqttCache[bikeId] = { lat, lon, speed: d.speed||0, satellites: d.satellites||0,
-                                   timestamp: d.timestamp||Date.now(), deviceId: d.deviceId||bikeId };
-
-        // Init map if not ready
-        if (!adminGpsMapInited) createAdminGpsMap(lat, lon);
-
-        // Resolve userName from already-loaded allUsers list by rfidUid
-        let userName = bikeId;
-        if (d.deviceId) {
-          const u = allUsers.find(u => u.rfidUid && u.rfidUid.toLowerCase() === d.deviceId.toLowerCase());
-          if (u) userName = u.firstName + " " + u.lastName;
+        // Update whichever active rider matches this device
+        const matchRider = activeRidersData.find(r => r.userId);
+        if (matchRider) {
+          matchRider.latitude  = lat;
+          matchRider.longitude = lon;
+          matchRider.speed     = d.speed || 0;
+          matchRider.satellites = d.satellites || 0;
+          matchRider.ageMs     = 0;
+        } else {
+          // No rider linked yet — still show on map as generic tracker
+          if (!activeRidersData.length) {
+            activeRidersData.push({
+              userId: 'mqtt-device',
+              userName: 'Active Rider',
+              bikeId: parts[1] || 'BIKE-001',
+              stationStart: '—',
+              startTime: new Date().toISOString(),
+              latitude: lat, longitude: lon,
+              speed: d.speed || 0, satellites: d.satellites || 0,
+              timestamp: new Date().toISOString(), ageMs: 0
+            });
+          }
         }
 
-        addAdminMqttMarker(bikeId, userName, lat, lon, d.speed||0, d.satellites||0);
-        setAdminGpsOnline(Object.keys(adminMqttCache).length);
+        renderActiveRidersList(activeRidersData);
+        updateMapWithRiders(activeRidersData);
 
-        // Update stat cards
-        document.getElementById("adminGpsLat").textContent  = lat.toFixed(5);
-        document.getElementById("adminGpsLon").textContent  = lon.toFixed(5);
-        document.getElementById("adminGpsSats").textContent = d.satellites || "—";
-        document.getElementById("adminGpsAge").textContent  = "Just now";
-
-        // Update trail table
-        upsertTrailRow(bikeId, userName, lat, lon, d.speed||0, d.satellites||0, d.timestamp||Date.now());
+        // Update full map metrics
+        document.getElementById('fullMapGpsFix').textContent  = 'Online';
+        document.getElementById('fullMapGpsFix').style.color  = 'var(--accent)';
+        document.getElementById('fullMapSpeed').textContent   = (d.speed||0).toFixed(1) + ' km/h';
+        document.getElementById('fullMapSats').textContent    = d.satellites || '—';
+        document.getElementById('detailLat').textContent      = lat.toFixed(6);
+        document.getElementById('detailLon').textContent      = lon.toFixed(6);
+        document.getElementById('detailSpeed').textContent    = (d.speed||0).toFixed(1) + ' km/h';
+        document.getElementById('detailSats').textContent     = d.satellites || '—';
+        document.getElementById('lastGpsAge').textContent     = '🟢 just now';
+        document.getElementById('fullMapGpsAge').textContent  = 'just now';
       }
-
-      if (msgType === "status" && !d.online) {
-        if (adminGpsMarkers[bikeId]) { adminGpsLeafMap.removeLayer(adminGpsMarkers[bikeId]); delete adminGpsMarkers[bikeId]; }
-        delete adminMqttCache[bikeId];
-        if (!Object.keys(adminMqttCache).length && !adminActiveLocations.length) setAdminGpsOffline();
-      }
-    } catch(e) {}
+    } catch {}
   });
 }
 
-function addAdminMqttMarker(bikeId, userName, lat, lon, speed, satellites) {
-  if (!adminGpsMapInited) return;
-  const colors = ["#00e5a0","#0088ff","#7c5cfc","#ffab00","#ff5050"];
-  const color  = colors[bikeId.charCodeAt(bikeId.length-1) % colors.length];
-  const popupHtml = `<b>🚲 ${bikeId}</b><br><b>${userName}</b><br>Speed: ${speed.toFixed(1)} km/h<br>Sats: ${satellites}`;
-  if (adminGpsMarkers[bikeId]) {
-    adminGpsMarkers[bikeId].setLatLng([lat,lon]);
-    adminGpsMarkers[bikeId].getPopup().setContent(popupHtml);
-  } else {
-    const icon = L.divIcon({
-      className:"",
-      html:`<div style="width:36px;height:36px;border-radius:50%;background:${color};border:3px solid #06090f;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 14px ${color}88;">🚲</div>`,
-      iconSize:[36,36], iconAnchor:[18,18]
-    });
-    adminGpsMarkers[bikeId] = L.marker([lat,lon],{icon}).addTo(adminGpsLeafMap).bindPopup(popupHtml);
-  }
+function setMqttStatus(on) {
+  const dot = document.getElementById('mqttDot');
+  const lbl = document.getElementById('mqttLabel');
+  const fdot = document.getElementById('fullMqttDot');
+  const flbl = document.getElementById('fullMqttLabel');
+  if (dot) { dot.style.background = on ? 'var(--accent)' : 'var(--text3)'; dot.classList.toggle('online', on); }
+  if (lbl) lbl.textContent = on ? 'MQTT Live' : 'MQTT Offline';
+  if (fdot) { fdot.style.background = on ? 'var(--accent)' : 'var(--text3)'; fdot.classList.toggle('online', on); }
+  if (flbl) flbl.textContent = on ? 'MQTT Live' : 'MQTT Offline';
 }
 
-function upsertTrailRow(bikeId, userName, lat, lon, speed, satellites, timestamp) {
-  const tbody = document.getElementById("adminGpsTrailBody");
-  if (!tbody) return;
-  let row = document.getElementById("trail-row-" + bikeId);
-  const cells = `<td style="color:var(--text3);">${bikeId}</td>
-    <td style="color:var(--accent);">${lat.toFixed(5)}</td>
-    <td style="color:var(--accent2);">${lon.toFixed(5)}</td>
-    <td>${speed.toFixed(1)}</td><td>${satellites||"—"}</td>
-    <td style="color:var(--text3);font-size:12px;"><strong>${userName}</strong><br>${new Date(timestamp).toLocaleTimeString()}</td>`;
-  if (row) { row.innerHTML = cells; }
-  else {
-    if (tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
-    row = document.createElement("tr"); row.id = "trail-row-" + bikeId;
-    row.innerHTML = cells; tbody.prepend(row);
-  }
-  document.getElementById("adminTrailCount").textContent = Object.keys(adminMqttCache).length + " active vehicle(s)";
-}
-
-function stopAdminGpsPoll() {
-  clearInterval(adminGpsPollTimer);
-  adminGpsPollTimer = null;
-}
-
-async function clearAdminGpsTrail() {
-  const token = localStorage.getItem('kuettrack_admin_token');
+// ─── Load Users Table ─────────────────────────────────────────────────────────
+async function loadUsers() {
   try {
-    const res = await fetch(API + '/api/gps/history', {
-      method: 'DELETE',
-      headers: { Authorization: 'Bearer ' + token }
+    const res = await fetch(`${API}/api/admin/users`, { headers: { Authorization: `Bearer ${adminToken}` } });
+    if (!res.ok) return;
+    const users = await res.json();
+    const tbody = document.getElementById('usersTbody');
+    if (!users.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3);">No users found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = users.map(u => {
+      const initials = ((u.firstName||'?')[0] + (u.lastName||'?')[0]).toUpperCase();
+      const planClass = u.plan === 'monthly' ? 'plan-monthly' : u.plan === 'student' ? 'plan-student' : 'plan-basic';
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px;">
+          <div class="user-row-avatar">${initials}</div>
+          <div><div style="font-weight:500;">${u.firstName} ${u.lastName}</div>
+          <div style="font-size:11px;color:var(--text3);">${u.email}</div></div>
+        </div></td>
+        <td>${u.email}</td>
+        <td><span class="plan-badge ${planClass}">${u.plan}</span></td>
+        <td>${u.rfidUid ? `<code style="font-size:11px;color:var(--accent);">${u.rfidUid}</code>` : '<span style="color:var(--text3);">—</span>'}</td>
+        <td style="color:var(--accent);">৳${(u.walletBalance||0).toLocaleString()}</td>
+        <td><span style="color:${u.isActive?'var(--accent)':'var(--red)'};font-size:12px;font-weight:600;">${u.isActive?'Active':'Suspended'}</span></td>
+        <td>
+          <button class="btn btn-sm btn-secondary" onclick="toggleUserActive('${u._id}',${!u.isActive})" title="${u.isActive?'Suspend':'Restore'}">${u.isActive?'Suspend':'Restore'}</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {}
+}
+
+// ─── Toggle User Active ───────────────────────────────────────────────────────
+async function toggleUserActive(userId, newState) {
+  try {
+    const res = await fetch(`${API}/api/admin/users/${userId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: newState })
     });
     if (res.ok) {
-      adminGpsMarkers = {};
-      if (adminGpsLeafMap) {
-        adminGpsLeafMap.eachLayer(layer => {
-          if (layer instanceof L.Marker) adminGpsLeafMap.removeLayer(layer);
-        });
-      }
-      renderAdminGpsUsersList([]);
-      showToast('🗑️ GPS trail cleared.');
+      showToast(newState ? '✅ User restored' : '⚠️ User suspended');
+      loadUsers();
     }
-  } catch (e) {
-    showToast('❌ Failed to clear GPS trail.');
+  } catch {}
+}
+
+// ─── Load Rides Table ─────────────────────────────────────────────────────────
+async function loadRides() {
+  try {
+    const res = await fetch(`${API}/api/rides`, { headers: { Authorization: `Bearer ${adminToken}` } });
+    if (!res.ok) return;
+    const rides = await res.json();
+    document.getElementById('rideCountLabel').textContent = rides.length + ' total rides';
+    const tbody = document.getElementById('ridesTbody');
+    if (!rides.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3);">No rides yet</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rides.map(r => {
+      const user = r.userId;
+      const name = user ? `${user.firstName} ${user.lastName}` : '—';
+      const sClass = r.status === 'active' ? 'rs-active' : 'rs-completed';
+      const started = new Date(r.startTime).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      return `<tr>
+        <td>${name}</td>
+        <td><code style="font-size:12px;color:var(--accent2);">${r.bikeId}</code></td>
+        <td style="color:var(--text2);">${r.stationStart}</td>
+        <td style="color:var(--text3);font-size:13px;">${started}</td>
+        <td>${r.duration || (r.status==='active'?'<span style="color:var(--red);">In progress</span>':'—')}</td>
+        <td style="color:var(--accent);">${r.fare ? '৳'+r.fare : '—'}</td>
+        <td><span class="ride-status ${sClass}">${r.status}</span></td>
+      </tr>`;
+    }).join('');
+  } catch {}
+}
+
+// ─── Load RFID Logs ───────────────────────────────────────────────────────────
+async function loadRfidLogs() {
+  try {
+    const [statsRes, logsRes] = await Promise.all([
+      fetch(`${API}/api/admin/rfid-stats`, { headers: { Authorization: `Bearer ${adminToken}` } }),
+      fetch(`${API}/api/admin/rfid-logins`, { headers: { Authorization: `Bearer ${adminToken}` } }),
+    ]);
+    if (statsRes.ok) {
+      const s = await statsRes.json();
+      document.getElementById('rfidTotal').textContent   = s.total;
+      document.getElementById('rfidSuccess').textContent = s.successful;
+      document.getElementById('rfidSuccessRate').textContent = 'Success rate: ' + s.successRate;
+      document.getElementById('rfidFailed').textContent  = s.failed;
+      document.getElementById('rfidWeek').textContent    = s.recentLogins;
+      document.getElementById('rfidAvgDay').textContent  = s.averagePerDay + ' avg/day';
+    }
+    if (logsRes.ok) {
+      const logs = await logsRes.json();
+      const tbody = document.getElementById('rfidLogsTbody');
+      tbody.innerHTML = logs.slice(0,100).map(l => {
+        const user = l.userId;
+        const statusColor = l.status==='success'?'var(--accent)':l.status==='invalid_card'?'var(--red)':'var(--amber)';
+        const ts = new Date(l.timestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        return `<tr>
+          <td style="color:var(--text3);font-size:12px;">${ts}</td>
+          <td><code style="font-size:12px;color:var(--accent2);">${l.rfidUid}</code></td>
+          <td>${user ? `${user.firstName} ${user.lastName}` : '<span style="color:var(--text3);">Unknown</span>'}</td>
+          <td style="color:var(--text3);">${l.stationId||'—'}</td>
+          <td><span style="color:${statusColor};font-size:11px;font-weight:600;text-transform:uppercase;">${l.status.replace('_',' ')}</span></td>
+        </tr>`;
+      }).join('');
+    }
+  } catch {}
+}
+
+// ─── Add User Modal Submit ────────────────────────────────────────────────────
+async function submitAddUser() {
+  const body = {
+    firstName: document.getElementById('addFirstName').value.trim(),
+    lastName:  document.getElementById('addLastName').value.trim(),
+    email:     document.getElementById('addEmail').value.trim(),
+    phone:     document.getElementById('addPhone').value.trim(),
+    city:      document.getElementById('addCity').value.trim(),
+    rfidUid:   document.getElementById('addRfid').value.trim(),
+    plan:      document.getElementById('addPlan').value,
+  };
+  if (!body.firstName || !body.email || !body.rfidUid) {
+    showToast('⚠️ Fill in required fields'); return;
   }
+  try {
+    const res = await fetch(`${API}/api/auth/rfid-user`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      closeModal('addUserModal');
+      showToast('✅ User created — temp password: ' + (data.tempPassword || 'RfidUser@123'));
+      await loadUsers();
+    } else {
+      showToast('❌ ' + (data.message || 'Failed'));
+    }
+  } catch { showToast('❌ Network error'); }
 }
 </script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.5.0/mqtt.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+/* Custom Leaflet popup dark theme */
+.leaflet-popup-content-wrapper{background:var(--surface2)!important;border:1px solid var(--border2)!important;color:var(--text)!important;border-radius:10px!important;box-shadow:0 8px 24px rgba(0,0,0,0.4)!important;}
+.leaflet-popup-tip{background:var(--surface2)!important;}
+.leaflet-popup-close-button{color:var(--text2)!important;}
+.opacity-60{opacity:0.6;}
+</style>
 </body>
 </html>
