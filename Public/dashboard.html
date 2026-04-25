@@ -1215,7 +1215,7 @@ async function startRide() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        bikeId:    'BIKE-001',
+        bikeId:    pendingBike.bikeId || 'BIKE-001',
         stationId: 'STATION-001'
       })
     });
@@ -1282,11 +1282,10 @@ async function endRide() {
 
   try {
     const token = localStorage.getItem('kuettrack_token');
-    const res = await fetch(`${API}/api/rides/end`, {
+    const res = await fetch(`${API}/api/rides/end/user`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        rfidUid:   currentUser.rfidUid || '',
         rideId:    rideState.rideId    || '',
         stationId: 'STATION-001'
       })
@@ -1914,14 +1913,32 @@ async function pollGps() {
   try {
     if (!currentUser) return;
     const token = localStorage.getItem('kuettrack_token');
+    let point = null;
+
+    // Try user-specific GPS first (saved in DB by rfidUid match)
     const res = await fetch(`${API}/api/gps/user/${currentUser.id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) { setGpsOffline(); renderNearbyStations(null,null); return; }
-    const point = await res.json();
+    if (res.ok) {
+      const d = await res.json();
+      // Only use if fresh (within 60s)
+      if (Date.now() - new Date(d.timestamp) <= 60000) {
+        point = { latitude: d.latitude, longitude: d.longitude, speed: d.speed, satellites: d.satellites, timestamp: d.timestamp };
+      }
+    }
 
-    // If last GPS update is older than 60s, treat as offline
-    if (Date.now() - new Date(point.timestamp) > 60000) { setGpsOffline(); return; }
+    // Fall back to global latest GPS (in-memory, no DB required)
+    if (!point) {
+      const r2 = await fetch(`${API}/api/gps/latest`);
+      if (r2.ok) {
+        const g = await r2.json();
+        if (g && g.lat != null && Date.now() - g.timestamp <= 60000) {
+          point = { latitude: g.lat, longitude: g.lon, speed: g.speed, satellites: g.satellites, timestamp: g.timestamp };
+        }
+      }
+    }
+
+    if (!point) { setGpsOffline(); renderNearbyStations(null,null); return; }
 
     globalGpsPoint = point;
     const lat = point.latitude, lon = point.longitude;

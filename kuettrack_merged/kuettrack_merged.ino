@@ -19,13 +19,6 @@
 //
 //   Green LED → GPIO 32   Red LED → GPIO 33   Buzzer → GPIO 25
 // =====================================================================
-//
-// ── STATE MACHINE ─────────────────────────────────────────────────────
-//  IDLE          → waiting for RFID tap, LCD shows "Tap RFID card"
-//  RFID_VERIFIED → card authenticated, polling server for unlock command
-//                  (user must click "Start Ride" on dashboard)
-//  RIDE_ACTIVE   → bike unlocked, GPS streaming, waiting for end tap
-// =====================================================================
 
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -47,9 +40,16 @@
 // ─── Backend ──────────────────────────────────────────────────────────
 #define API_BASE_URL   "https://kuettrack.onrender.com"
 #define GPS_SERVER_URL "https://kuettrack.onrender.com/api/gps/update"
-#define API_TIMEOUT_RFID  8000
-#define API_TIMEOUT_GPS   2000
-#define API_TIMEOUT_CMD   3000   // command poll is short
+
+// ── Timeouts ─────────────────────────────────────────────────────────
+// RFID auth: give Render enough time to wake from cold start on first tap
+#define API_TIMEOUT_RFID   12000
+// Command poll: generous so cold-start wake is handled on first poll burst
+#define API_TIMEOUT_CMD     6000
+// GPS: short — stale GPS is fine, we don't want to block the loop
+#define API_TIMEOUT_GPS     3000
+// Keep-alive health ping: short
+#define API_TIMEOUT_PING    5000
 
 // ─── RC522 Pins ───────────────────────────────────────────────────────
 #define SS_PIN   5
@@ -75,10 +75,15 @@
 // ─── Timing ───────────────────────────────────────────────────────────
 #define GPS_SEND_INTERVAL       5000
 #define GPS_NOFIX_INTERVAL      15000
-#define CMD_POLL_INTERVAL       1000   // how often to poll for unlock command
-#define CONNECTION_CHECK        10000
+// Poll every 2 s — fast enough to feel responsive, not so fast it hammers SSL
+#define CMD_POLL_INTERVAL       2000
+#define CONNECTION_CHECK        15000
 #define LCD_UPDATE_INTERVAL     3000
-#define READ_COOLDOWN           2000   // min ms between RFID reads
+#define READ_COOLDOWN           2000
+
+// Keep-alive: ping Render every 4 minutes so free-tier server never sleeps.
+// Render spins down after ~15 min of no requests; 4 min margin keeps it warm.
+#define KEEPALIVE_INTERVAL      240000UL   // 4 minutes
 
 // ─── State Machine ────────────────────────────────────────────────────
 enum BikeState { STATE_IDLE, STATE_RFID_VERIFIED, STATE_RIDE_ACTIVE };
@@ -89,23 +94,34 @@ MFRC522           rfid(SS_PIN, RST_PIN);
 Preferences       preferences;
 TinyGPSPlus       gps;
 HardwareSerial    gpsSerial(2);
-LiquidCrystal_I2C lcd(0x27, 16, 2);   // change 0x27 → 0x3F if LCD blank
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// ── Reusable HTTPS client — avoids repeated TLS handshakes ───────────
+// One global WiFiClientSecure is reused for all API calls.
+// This cuts per-poll latency from ~3 s (new TLS) to ~200 ms (reuse).
+WiFiClientSecure  secureClient;
 
 // ─── RFID / Ride State ────────────────────────────────────────────────
-String        currentRfidUid    = "";   // UID of the verified card
+String        currentRfidUid    = "";
 String        currentRideId     = "";
 String        currentUserName   = "";
 unsigned long lastReadTime      = 0;
 
-// ─── GPS State ────────────────────────────────────────────────────────
+// ─── Timers ───────────────────────────────────────────────────────────
 unsigned long lastGpsSend          = 0;
 unsigned long lastConnectionCheck  = 0;
 unsigned long lastCmdPoll          = 0;
 unsigned long lastLcdUpdate        = 0;
 unsigned long lastRfidReinit       = 0;
 unsigned long lastHeartbeat        = 0;
+unsigned long lastKeepAlive        = 0;   // server warm-up ping
 unsigned long rawBytesReceived     = 0;
 int           rfidFailCount        = 0;
+
+// ─── Non-blocking LED/Buzzer state ───────────────────────────────────
+unsigned long ledOffAt       = 0;
+bool          ledGreenActive = false;
+bool          ledRedActive   = false;
 
 // ─── Forward Declarations ─────────────────────────────────────────────
 void connectToWiFi();
@@ -118,12 +134,14 @@ void lockDoor();
 void unlockDoor();
 void solenoidTest();
 void beep(int times, int duration);
-void feedback(bool success);
+void feedbackAsync(bool success);
+void tickLed();
 void sendGPSData();
 void lcdMsg(String line1, String line2);
 void updateLcdForState();
 void checkBikeCommand();
 void drainGPS();
+void keepAlive();
 
 // ─── Drain GPS serial (non-blocking) ──────────────────────────────────
 void drainGPS() {
@@ -134,6 +152,7 @@ void drainGPS() {
 }
 
 // ─── Short blocking wait that keeps draining GPS ──────────────────────
+// Used ONLY in setup / end-ride summary where a brief block is acceptable.
 void gpsWait(unsigned long ms) {
   unsigned long t = millis();
   while (millis() - t < ms) {
@@ -162,86 +181,94 @@ void setup() {
   lcdMsg("KuetTrack", "Booting...");
   Serial.println("[LCD] OK");
 
-  // ── GPS UART2 — start BEFORE SPI so UART interrupts settle first ──
+  // ── GPS UART2 ─────────────────────────────────────────────────────
   gpsSerial.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
   Serial.printf("[GPS] UART2 started: RX=GPIO%d  TX=GPIO%d\n", GPS_RX_PIN, GPS_TX_PIN);
-  Serial.println("[GPS] GPS will only stream when a ride is active.");
-  delay(200);   // let UART interrupt handler register before SPI starts
+  delay(200);
 
   // ── SPI + RC522 ───────────────────────────────────────────────────
   SPI.begin(18, 19, 23, 5);
   delay(50);
   rfid.PCD_Init();
   delay(200);
-  rfid.PCD_AntennaOn();                               // explicit antenna enable
-  rfid.PCD_WriteRegister(MFRC522::RFCfgReg, 0x3F);   // max RF gain
+  rfid.PCD_AntennaOn();
+  rfid.PCD_WriteRegister(MFRC522::RFCfgReg, 0x3F);
 
   byte ver = rfid.PCD_ReadRegister(MFRC522::VersionReg);
   Serial.printf("[RFID] RC522 firmware: 0x%02X  ", ver);
-  if (ver == 0x00 || ver == 0xFF) {
-    Serial.println("NOT DETECTED — check SPI wiring!");
-  } else {
-    Serial.println("OK");
-  }
+  Serial.println((ver == 0x00 || ver == 0xFF) ? "NOT DETECTED!" : "OK");
 
-  // ── Relay Pin — start LOCKED ───────────────────────────────────────
+  // ── Relay — start LOCKED ──────────────────────────────────────────
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, RELAY_LOCK);
   delay(300);
   solenoidTest();
 
-  // ── Re-init RFID after solenoid test delays ────────────────────────
-  // The long delays in solenoidTest() can upset the RC522 SPI state.
-  rfid.PCD_Init();
-  delay(150);
+  // Re-init RFID after solenoid test
+  rfid.PCD_Init(); delay(150);
   rfid.PCD_AntennaOn();
   rfid.PCD_WriteRegister(MFRC522::RFCfgReg, 0x3F);
   Serial.println("[RFID] Re-initialised after solenoid test — READY.");
 
-  // ── Preferences ───────────────────────────────────────────────────
+  // ── Global secure client — set once, reused everywhere ───────────
+  secureClient.setInsecure();   // skip cert verification (same as before)
+
   preferences.begin("kuettrack", false);
 
   // ── WiFi ──────────────────────────────────────────────────────────
   lcdMsg("WiFi connect", WIFI_SSID);
   connectToWiFi();
 
+  // ── Warm up the Render server NOW so first RFID tap is instant ────
+  // Without this, first request after a cold start takes 5-7 minutes.
+  lcdMsg("Waking server", "Please wait...");
+  Serial.println("[INIT] Pinging server to wake Render free-tier instance...");
+  keepAlive();
+
   lcdMsg("KuetTrack Ready", "Tap RFID card");
   Serial.println("\n[READY] Tap RFID card to authenticate.\n");
-  feedback(true);
+  feedbackAsync(true);
 }
 
 // ═════════════════════════════════════════════════════════════════════
 void loop() {
 
-  // ── Always drain GPS serial (so buffer never overflows) ──────────
   drainGPS();
   yield();
+  tickLed();   // non-blocking LED off-timer
 
   unsigned long now = millis();
 
-  // ── Serial heartbeat — confirms loop is running (every 8 s) ─────
+  // ── Serial heartbeat (every 8 s) ─────────────────────────────────
   if (now - lastHeartbeat > 8000) {
     lastHeartbeat = now;
-    const char* stateStr = (bikeState == STATE_IDLE) ? "IDLE" :
-                           (bikeState == STATE_RFID_VERIFIED) ? "RFID_VERIFIED" : "RIDE_ACTIVE";
-    Serial.printf("[LOOP] alive | state=%s | GPS_bytes=%lu | WiFi=%s\n",
-                  stateStr, rawBytesReceived,
+    const char* s = (bikeState == STATE_IDLE) ? "IDLE" :
+                    (bikeState == STATE_RFID_VERIFIED) ? "RFID_VERIFIED" : "RIDE_ACTIVE";
+    Serial.printf("[LOOP] alive | state=%s | GPS_bytes=%lu | heap=%u | WiFi=%s\n",
+                  s, rawBytesReceived, ESP.getFreeHeap(),
                   WiFi.status() == WL_CONNECTED ? "OK" : "DOWN");
   }
 
-  // ── Periodic RFID re-init (antenna can drift, esp. with GPS active) ─
-  // Re-init every 15 s when idle — keeps SPI link healthy
+  // ── Keep server warm — ping every 4 minutes ───────────────────────
+  // This is the PRIMARY fix for the 6-7 min cold-start delay.
+  // Render free tier spins the server down after ~15 min of no traffic.
+  // We ping every 4 min so the server is always hot when the user taps.
+  if (now - lastKeepAlive > KEEPALIVE_INTERVAL) {
+    lastKeepAlive = now;
+    keepAlive();
+  }
+
+  // ── Periodic RFID re-init (idle only) ────────────────────────────
   if (bikeState == STATE_IDLE && now - lastRfidReinit > 15000) {
     lastRfidReinit = now;
-    rfid.PCD_Init();
-    delay(50);
+    rfid.PCD_Init(); delay(50);
     rfid.PCD_AntennaOn();
     rfid.PCD_WriteRegister(MFRC522::RFCfgReg, 0x3F);
     rfidFailCount = 0;
     Serial.println("[RFID] Periodic re-init OK");
   }
 
-  // ── WiFi watchdog ─────────────────────────────────────────────────
+  // ── WiFi watchdog ────────────────────────────────────────────────
   if (now - lastConnectionCheck > CONNECTION_CHECK) {
     lastConnectionCheck = now;
     if (WiFi.status() != WL_CONNECTED) {
@@ -268,32 +295,26 @@ void loop() {
         beep(1, 80);
 
         if (bikeState == STATE_IDLE) {
-          // First tap — authenticate the card
           authenticateRfidCard(uid);
 
         } else if (bikeState == STATE_RFID_VERIFIED) {
           if (uid == currentRfidUid) {
-            // Same card tapped again — cancel, go back to idle
-            Serial.println("[RFID] Card tapped in VERIFIED state — cancelling, returning to IDLE.");
+            Serial.println("[RFID] Cancel — returning to IDLE.");
             lcdMsg("Cancelled", "Tap card again");
-            feedback(false);
+            feedbackAsync(false);
             bikeState = STATE_IDLE;
-            currentRfidUid = "";
+            currentRfidUid  = "";
             currentUserName = "";
             gpsWait(1500);
             lcdMsg("KuetTrack Ready", "Tap RFID card");
           }
-          // Different card — ignore
 
         } else if (bikeState == STATE_RIDE_ACTIVE) {
           if (uid == currentRfidUid) {
-            // Second tap of same card — end the ride
             endRide(uid);
           } else {
-            // Different card during active ride — deny
             lcdMsg("Ride in progress", "Use your card");
-            feedback(false);
-            gpsWait(1500);
+            feedbackAsync(false);
           }
         }
 
@@ -303,7 +324,7 @@ void loop() {
     }
   }
 
-  // ── Command polling (only when waiting for dashboard to start ride) ─
+  // ── Command polling — runs every CMD_POLL_INTERVAL when waiting ───
   if (bikeState == STATE_RFID_VERIFIED) {
     if (now - lastCmdPoll > CMD_POLL_INTERVAL) {
       lastCmdPoll = now;
@@ -311,7 +332,7 @@ void loop() {
     }
   }
 
-  // ── GPS send — ONLY during active ride ───────────────────────────
+  // ── GPS send — only during active ride ───────────────────────────
   if (bikeState == STATE_RIDE_ACTIVE) {
     bool hasFix = gps.location.isValid();
     unsigned long interval = hasFix ? GPS_SEND_INTERVAL : GPS_NOFIX_INTERVAL;
@@ -321,7 +342,7 @@ void loop() {
     }
   }
 
-  // ── LCD refresh ───────────────────────────────────────────────────
+  // ── LCD refresh ──────────────────────────────────────────────────
   if (now - lastLcdUpdate > LCD_UPDATE_INTERVAL) {
     lastLcdUpdate = now;
     updateLcdForState();
@@ -329,7 +350,20 @@ void loop() {
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// RFID Authentication — only verifies user, does NOT unlock
+// Keep Render server warm — lightweight GET to /api/system/health
+// ═════════════════════════════════════════════════════════════════════
+void keepAlive() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  HTTPClient http;
+  http.begin(secureClient, String(API_BASE_URL) + "/api/system/health");
+  http.setTimeout(API_TIMEOUT_PING);
+  int code = http.GET();
+  http.end();
+  Serial.printf("[PING] Server health: HTTP %d (heap=%u)\n", code, ESP.getFreeHeap());
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// RFID Authentication
 // ═════════════════════════════════════════════════════════════════════
 void authenticateRfidCard(String uid) {
   Serial.println("[AUTH] Authenticating UID: " + uid);
@@ -337,15 +371,13 @@ void authenticateRfidCard(String uid) {
 
   if (WiFi.status() != WL_CONNECTED) {
     lcdMsg("No WiFi!", "Auth failed");
-    feedback(false);
+    feedbackAsync(false);
     return;
   }
 
-  WiFiClientSecure client;
-  client.setInsecure();
   HTTPClient http;
   http.setTimeout(API_TIMEOUT_RFID);
-  http.begin(client, String(API_BASE_URL) + "/api/auth/user-by-rfid/" + uid);
+  http.begin(secureClient, String(API_BASE_URL) + "/api/auth/user-by-rfid/" + uid);
   http.addHeader("Content-Type", "application/json");
   int    code     = http.GET();
   String response = http.getString();
@@ -353,28 +385,27 @@ void authenticateRfidCard(String uid) {
   Serial.printf("[AUTH] HTTP %d\n", code);
 
   if (code == 200 && parseUserData(response)) {
-    currentRfidUid  = uid;
-    bikeState       = STATE_RFID_VERIFIED;
-    lastCmdPoll     = 0;  // force immediate poll on next loop
+    currentRfidUid = uid;
+    bikeState      = STATE_RFID_VERIFIED;
+    lastCmdPoll    = 0;   // force immediate poll on next loop tick
     Serial.println("[AUTH] GRANTED — " + currentUserName);
-    Serial.println("[AUTH] Waiting for dashboard to start ride...");
     lcdMsg("Verified!", currentUserName.substring(0, 16));
-    feedback(true);
-    gpsWait(1000);
+    feedbackAsync(true);
+    gpsWait(800);
     lcdMsg("Open app to", "start your ride");
 
   } else if (code == 404) {
     Serial.println("[AUTH] DENIED — card not registered");
     lcdMsg("ACCESS DENIED", "Not registered");
-    feedback(false);
-    gpsWait(2000);
+    feedbackAsync(false);
+    gpsWait(1500);
     lcdMsg("KuetTrack Ready", "Tap RFID card");
 
   } else {
     Serial.printf("[AUTH] Error %d\n", code);
     lcdMsg("Auth error", "Try again");
-    feedback(false);
-    gpsWait(2000);
+    feedbackAsync(false);
+    gpsWait(1500);
     lcdMsg("KuetTrack Ready", "Tap RFID card");
   }
 
@@ -382,39 +413,39 @@ void authenticateRfidCard(String uid) {
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// Poll server for pending unlock command from dashboard
+// Poll for pending unlock command — called every CMD_POLL_INTERVAL
 // ═════════════════════════════════════════════════════════════════════
 void checkBikeCommand() {
   if (WiFi.status() != WL_CONNECTED) return;
 
-  WiFiClientSecure client;
-  client.setInsecure();
+  // Reuse the global secureClient — no new TLS handshake needed if
+  // the connection to the server is still alive from the last call.
   HTTPClient http;
   http.setTimeout(API_TIMEOUT_CMD);
-  http.begin(client, String(API_BASE_URL) + "/api/bikes/" + BIKE_ID + "/command");
+  http.begin(secureClient, String(API_BASE_URL) + "/api/bikes/" + BIKE_ID + "/command");
+
   int    code     = http.GET();
   String response = http.getString();
   http.end();
 
   Serial.printf("[CMD] poll HTTP %d\n", code);
-  if (code != 200) return;  // 204 = no command pending
 
-  // Parse response: { "command": "unlock", "rfidUid": "...", "rideId": "..." }
+  if (code != 200) return;   // 204 = no command pending
+
   DynamicJsonDocument doc(256);
   if (deserializeJson(doc, response) != DeserializationError::Ok) return;
 
   String cmd    = doc["command"] | "";
   String rideId = doc["rideId"]  | "";
 
-  // Only check command type — server already validated rfidUid when storing command
   if (cmd == "unlock") {
     currentRideId = rideId;
-    Serial.println("[CMD] Unlock command received! Ride ID: " + rideId);
-    bikeState = STATE_RIDE_ACTIVE;
-    lastGpsSend = 0;  // send GPS immediately on next loop
+    Serial.println("[CMD] UNLOCK received! Ride: " + rideId);
+    bikeState   = STATE_RIDE_ACTIVE;
+    lastGpsSend = 0;
 
     unlockDoor();
-    feedback(true);
+    feedbackAsync(true);
 
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -422,29 +453,42 @@ void checkBikeCommand() {
     lcd.setCursor(0, 1);
     lcd.print("GPS updating...");
     Serial.println("[RIDE] Active — GPS streaming started.");
+
+  } else if (cmd == "lock") {
+    // Dashboard ended the ride remotely — lock immediately
+    Serial.println("[CMD] LOCK received from server (web end-ride).");
+    lockDoor();
+    feedbackAsync(false);   // red LED = locked
+
+    bikeState       = STATE_IDLE;
+    currentRfidUid  = "";
+    currentRideId   = "";
+    currentUserName = "";
+
+    lcdMsg("Ride Ended", "Locked remotely");
+    gpsWait(2500);
+    lcdMsg("KuetTrack Ready", "Tap RFID card");
   }
 
   reinitRFID();
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// End ride — called on second RFID tap
+// End ride — second RFID tap
 // ═════════════════════════════════════════════════════════════════════
 void endRide(String uid) {
   if (WiFi.status() != WL_CONNECTED) {
     lcdMsg("No WiFi!", "Cannot end ride");
-    feedback(false);
+    feedbackAsync(false);
     return;
   }
 
   lcdMsg("Ending ride...", "Please wait");
   Serial.println("[RIDE] Ending ride for UID: " + uid);
 
-  WiFiClientSecure client;
-  client.setInsecure();
   HTTPClient http;
   http.setTimeout(API_TIMEOUT_RFID);
-  http.begin(client, String(API_BASE_URL) + "/api/rides/end");
+  http.begin(secureClient, String(API_BASE_URL) + "/api/rides/end");
   http.addHeader("Content-Type", "application/json");
 
   String payload = "{\"rfidUid\":\"" + uid +
@@ -456,26 +500,23 @@ void endRide(String uid) {
   Serial.printf("[RIDE] end HTTP %d\n", code);
 
   if (code == 200) {
-    // Parse fare from response
     DynamicJsonDocument doc(256);
     deserializeJson(doc, response);
     String duration = doc["duration"] | "00:00";
     int    fare     = doc["fare"]     | 0;
 
     lockDoor();
-    feedback(true);
+    feedbackAsync(true);
 
-    // Reset all state
     bikeState       = STATE_IDLE;
     currentRfidUid  = "";
     currentRideId   = "";
     currentUserName = "";
 
-    Serial.printf("[RIDE] Ended. Duration: %s  Fare: ৳%d\n", duration.c_str(), fare);
+    Serial.printf("[RIDE] Ended. Duration: %s  Fare: Tk%d\n", duration.c_str(), fare);
 
     lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Ride Ended!");
+    lcd.setCursor(0, 0); lcd.print("Ride Ended!");
     lcd.setCursor(0, 1);
     String fareStr = "Fare: Tk" + String(fare) + " " + duration;
     lcd.print(fareStr.substring(0, 16));
@@ -483,9 +524,9 @@ void endRide(String uid) {
     lcdMsg("KuetTrack Ready", "Tap RFID card");
 
   } else {
-    Serial.printf("[RIDE] End failed HTTP %d: %s\n", code, response.c_str());
+    Serial.printf("[RIDE] End failed HTTP %d\n", code);
     lcdMsg("End failed", "Tap card again");
-    feedback(false);
+    feedbackAsync(false);
     gpsWait(2000);
   }
 
@@ -493,51 +534,14 @@ void endRide(String uid) {
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// LCD update based on current state
-// ═════════════════════════════════════════════════════════════════════
-void updateLcdForState() {
-  if (bikeState == STATE_IDLE) {
-    lcdMsg("KuetTrack Ready", "Tap RFID card");
-
-  } else if (bikeState == STATE_RFID_VERIFIED) {
-    // Blink between two messages so user knows system is waiting
-    static bool toggle = false;
-    toggle = !toggle;
-    if (toggle) {
-      lcdMsg("Card verified!", currentUserName.substring(0, 16));
-    } else {
-      lcdMsg("Open app to", "start your ride");
-    }
-
-  } else if (bikeState == STATE_RIDE_ACTIVE) {
-    // Show GPS coordinates during active ride
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    String user16 = (">" + currentUserName).substring(0, 16);
-    lcd.print(user16);
-    lcd.setCursor(0, 1);
-    if (gps.location.isValid()) {
-      char buf[17];
-      snprintf(buf, sizeof(buf), "%.4f,%.4f",
-               gps.location.lat(), gps.location.lng());
-      lcd.print(buf);
-    } else {
-      char s[17];
-      snprintf(s, sizeof(s), "GPS fix... s:%u", (unsigned)gps.satellites.value());
-      lcd.print(s);
-    }
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════
-// GPS send — only called when RIDE_ACTIVE
+// GPS send
 // ═════════════════════════════════════════════════════════════════════
 void sendGPSData() {
   if (WiFi.status() != WL_CONNECTED) return;
   bool hasFix = gps.location.isValid();
 
   DynamicJsonDocument doc(256);
-  doc["deviceId"]   = currentRfidUid;   // RFID UID as device ID
+  doc["deviceId"]   = currentRfidUid;
   doc["hasFix"]     = hasFix;
   doc["satellites"] = (int)gps.satellites.value();
   doc["lat"]        = hasFix ? gps.location.lat()    : 0.0;
@@ -548,23 +552,60 @@ void sendGPSData() {
   String body;
   serializeJson(doc, body);
 
-  WiFiClientSecure client;
-  client.setInsecure();
   HTTPClient http;
-  http.begin(client, GPS_SERVER_URL);
+  http.begin(secureClient, GPS_SERVER_URL);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(API_TIMEOUT_GPS);
   int code = http.POST(body);
+  http.end();
+
   Serial.printf("[GPS] HTTP %d fix=%s lat=%.5f lon=%.5f sats=%u\n",
                 code, hasFix ? "yes" : "no",
                 hasFix ? gps.location.lat() : 0.0,
                 hasFix ? gps.location.lng() : 0.0,
                 (unsigned)gps.satellites.value());
-  http.end();
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// Solenoid Lock via Relay
+// Non-blocking LED / Buzzer feedback
+// ═════════════════════════════════════════════════════════════════════
+void beep(int times, int duration) {
+  for (int i = 0; i < times; i++) {
+    digitalWrite(BUZZER_PIN, HIGH); delay(duration);
+    digitalWrite(BUZZER_PIN, LOW);
+    if (i < times - 1) delay(80);
+  }
+}
+
+// Turn on LED and schedule turn-off after 800 ms — no blocking delay
+void feedbackAsync(bool success) {
+  beep(success ? 2 : 3, success ? 150 : 100);
+  if (success) {
+    digitalWrite(GREEN_LED, HIGH);
+    ledGreenActive = true;
+    ledRedActive   = false;
+    digitalWrite(RED_LED, LOW);
+  } else {
+    digitalWrite(RED_LED, HIGH);
+    ledRedActive   = true;
+    ledGreenActive = false;
+    digitalWrite(GREEN_LED, LOW);
+  }
+  ledOffAt = millis() + 800;
+}
+
+// Call every loop iteration — turns LED off when timer expires
+void tickLed() {
+  if ((ledGreenActive || ledRedActive) && millis() >= ledOffAt) {
+    digitalWrite(GREEN_LED, LOW);
+    digitalWrite(RED_LED,   LOW);
+    ledGreenActive = false;
+    ledRedActive   = false;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// Solenoid helpers
 // ═════════════════════════════════════════════════════════════════════
 void solenoidTest() {
   Serial.println("[RELAY] Boot test: lock→unlock→lock");
@@ -578,26 +619,48 @@ void solenoidTest() {
 }
 
 void unlockDoor() {
-  Serial.println("[RELAY] Unlocking solenoid...");
+  Serial.println("[RELAY] UNLOCKING solenoid");
   lcdMsg("Unlocking...", "");
   digitalWrite(RELAY_PIN, RELAY_UNLOCK);
   Serial.println("[RELAY] UNLOCKED");
 }
 
 void lockDoor() {
-  Serial.println("[RELAY] Locking solenoid...");
+  Serial.println("[RELAY] LOCKING solenoid");
   lcdMsg("Locking...", "");
   digitalWrite(RELAY_PIN, RELAY_LOCK);
   Serial.println("[RELAY] LOCKED");
 }
 
-void reinitRFID() {
-  delay(100);
-  rfid.PCD_Init();
-  delay(100);
-  rfid.PCD_AntennaOn();                              // must re-enable antenna after every init
-  rfid.PCD_WriteRegister(MFRC522::RFCfgReg, 0x3F);  // restore max gain
-  delay(50);
+// ═════════════════════════════════════════════════════════════════════
+// LCD state display
+// ═════════════════════════════════════════════════════════════════════
+void updateLcdForState() {
+  if (bikeState == STATE_IDLE) {
+    lcdMsg("KuetTrack Ready", "Tap RFID card");
+
+  } else if (bikeState == STATE_RFID_VERIFIED) {
+    static bool toggle = false;
+    toggle = !toggle;
+    if (toggle) lcdMsg("Card verified!", currentUserName.substring(0, 16));
+    else        lcdMsg("Open app to", "start your ride");
+
+  } else if (bikeState == STATE_RIDE_ACTIVE) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print((">" + currentUserName).substring(0, 16));
+    lcd.setCursor(0, 1);
+    if (gps.location.isValid()) {
+      char buf[17];
+      snprintf(buf, sizeof(buf), "%.4f,%.4f",
+               gps.location.lat(), gps.location.lng());
+      lcd.print(buf);
+    } else {
+      char s[17];
+      snprintf(s, sizeof(s), "GPS fix... s:%u", (unsigned)gps.satellites.value());
+      lcd.print(s);
+    }
+  }
 }
 
 // ═════════════════════════════════════════════════════════════════════
@@ -655,21 +718,11 @@ bool parseUserData(String response) {
   return true;
 }
 
-// ═════════════════════════════════════════════════════════════════════
-// Feedback
-// ═════════════════════════════════════════════════════════════════════
-void beep(int times, int duration) {
-  for (int i = 0; i < times; i++) {
-    digitalWrite(BUZZER_PIN, HIGH); delay(duration);
-    digitalWrite(BUZZER_PIN, LOW);
-    if (i < times - 1) delay(80);
-  }
-}
-
-void feedback(bool success) {
-  if (success) {
-    digitalWrite(GREEN_LED, HIGH); beep(2, 150); delay(600); digitalWrite(GREEN_LED, LOW);
-  } else {
-    digitalWrite(RED_LED, HIGH);   beep(3, 100); delay(600); digitalWrite(RED_LED,   LOW);
-  }
+void reinitRFID() {
+  delay(100);
+  rfid.PCD_Init();
+  delay(100);
+  rfid.PCD_AntennaOn();
+  rfid.PCD_WriteRegister(MFRC522::RFCfgReg, 0x3F);
+  delay(50);
 }

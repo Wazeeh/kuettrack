@@ -56,6 +56,10 @@ let gpsHistory = [];           // rolling last 300 points for trail
 // Format: { 'BIKE-001': { command: 'unlock', rfidUid: '...', rideId: '...' } }
 const bikeCommands = {};
 
+// ─── Bike Pending Lock Commands (set when website ends a ride) ─────────────
+// ESP32 picks these up via the same GET /api/bikes/:bikeId/command endpoint
+const bikeLockCommands = {};
+
 // ─── MongoDB Atlas Connection ─────────────────────────
 // ─── MongoDB Atlas Connection ─────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -1086,19 +1090,85 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/bikes/:bikeId/command — ESP32 polls this to get pending commands (e.g., unlock)
+// GET /api/bikes/:bikeId/command — ESP32 polls this to get pending commands (unlock OR lock)
 // Returns the command once and clears it (one-shot delivery).
 app.get('/api/bikes/:bikeId/command', async (req, res) => {
   const bikeId = req.params.bikeId;
-  // Query DB for a pending unlock command for this bike
+
+  // ── 1. Check for pending LOCK command (set when website ends a ride) ──
+  if (bikeLockCommands[bikeId]) {
+    const info = bikeLockCommands[bikeId];
+    delete bikeLockCommands[bikeId];
+    console.log(`📡 Lock command delivered to ${bikeId}`);
+    return res.json({ command: 'lock', rideId: info.rideId || '' });
+  }
+
+  // ── 2. Check for pending UNLOCK command (set when website starts a ride) ──
   const ride = await Ride.findOne({ bikeId, pendingCommand: 'unlock', status: 'active' });
   if (!ride) {
     return res.status(204).send();   // no pending command
   }
   // Clear so the command is only delivered once
   await Ride.findByIdAndUpdate(ride._id, { pendingCommand: null });
-  console.log(`📡 Command delivered to ${bikeId}: unlock (rfid=${ride.rfidUid} rideId=${ride._id})`);
+  console.log(`📡 Unlock command delivered to ${bikeId}: rfid=${ride.rfidUid} rideId=${ride._id}`);
   res.json({ command: 'unlock', rfidUid: ride.rfidUid, rideId: ride._id.toString() });
+});
+
+// POST /api/rides/end/user — Website (JWT auth) ends an active ride and queues solenoid lock
+app.post('/api/rides/end/user', authMiddleware, async (req, res) => {
+  try {
+    const { rideId, stationId } = req.body;
+
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    // Find active ride by rideId (if given) or latest active ride for this user
+    let ride;
+    if (rideId) {
+      ride = await Ride.findById(rideId);
+      if (!ride || ride.userId.toString() !== user._id.toString()) {
+        return res.status(404).json({ message: 'Ride not found or access denied.' });
+      }
+    } else {
+      ride = await Ride.findOne({ userId: user._id, status: 'active' }).sort({ startTime: -1 });
+    }
+    if (!ride) return res.status(404).json({ message: 'No active ride found.' });
+
+    const endTime = new Date();
+    const elapsedSec = Math.floor((endTime - ride.startTime) / 1000);
+    const mins = Math.floor(elapsedSec / 60);
+    const secs = elapsedSec % 60;
+    const duration = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+    const distanceKm = parseFloat((elapsedSec * 0.00278).toFixed(2));
+    const fare = Math.max(Math.ceil(elapsedSec / 60) * 2, 2);
+
+    const newBalance = Math.max((user.walletBalance || 0) - fare, 0);
+    await User.findByIdAndUpdate(user._id, { walletBalance: newBalance });
+
+    await Ride.findByIdAndUpdate(ride._id, {
+      status: 'completed',
+      endTime,
+      stationEnd: stationId || 'Unknown',
+      duration,
+      distanceKm,
+      fare
+    });
+
+    // ── Queue lock command so ESP32 locks solenoid on next poll ──
+    bikeLockCommands[ride.bikeId] = { rideId: ride._id.toString() };
+    console.log(`🔒 Lock command queued (web) for ${ride.bikeId} | user: ${user.firstName}`);
+
+    res.json({
+      message: 'Ride ended.',
+      duration,
+      distanceKm,
+      fare,
+      newBalance
+    });
+  } catch (err) {
+    console.error('End ride (user) error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
 });
 
 // POST /api/rides/end — ESP-32 calls when user taps card to return bike
@@ -1140,6 +1210,10 @@ app.post('/api/rides/end', async (req, res) => {
       distanceKm,
       fare
     });
+
+    // ── Queue lock command so ESP32 locks solenoid on next poll ──
+    bikeLockCommands[ride.bikeId] = { rideId: ride._id.toString() };
+    console.log(`🔒 Lock command queued for ${ride.bikeId}`);
 
     res.json({
       message: 'Ride ended.',
