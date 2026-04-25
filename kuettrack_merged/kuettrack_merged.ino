@@ -330,8 +330,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     String rideId = doc["rideId"]  | "";
 
     if (cmd == "unlock") {
+      // Guard: ignore stale QoS-1 broker message delivered after ride already ended via RFID
+      if (bikeState == STATE_RIDE_ACTIVE) {
+        Serial.println("[CMD] UNLOCK ignored — ride already active (stale broker msg)");
+        reinitRFID(); return;
+      }
       currentRideId = rideId;
-      // Capture rfidUid + userName from cmd so GPS publishes with the correct deviceId
+      // Capture rfidUid + userName so GPS publishes with the correct deviceId
       String cmdRfid = doc["rfidUid"] | String("");
       cmdRfid.toUpperCase();
       if (cmdRfid.length() > 0) currentRfidUid = cmdRfid;

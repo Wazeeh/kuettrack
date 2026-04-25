@@ -746,6 +746,11 @@ app.post('/api/rfid/scan', async (req, res) => {
         fare
       });
       console.log(`🔒 Ride ended: ${rfidUid} | duration=${duration} fare=৳${fare} newBalance=৳${newBalance}`);
+      // Publish MQTT lock immediately — overrides any buffered QoS-1 unlock message
+      // the broker may re-deliver to the ESP32 after a reconnect
+      mqttPublish(`kuettrack/${activeRide.bikeId || stationId || 'BIKE-001'}/cmd`, {
+        command: 'lock', rideId: activeRide._id.toString()
+      });
     } else {
       // No active ride — start a new one and unlock
       lockAction = 'unlock';
@@ -761,9 +766,10 @@ app.post('/api/rfid/scan', async (req, res) => {
     console.log(`✅ RFID authorized: ${rfidUid} → ${user.firstName} ${user.lastName} | lockAction: ${lockAction}`);
     res.json({
       authorized: true,
-      lockAction,                          // ← ESP32 reads this to trigger relay
+      lockAction,
       message: lockAction === 'unlock' ? 'Bike unlocked. Enjoy your ride!' : 'Bike locked. Ride ended.',
-      userName: user.firstName
+      userName: user.firstName,
+      ...(lockAction === 'lock' && { duration, fare })
     });
   } catch (err) {
     console.error('RFID scan error:', err);
@@ -1238,7 +1244,7 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
 
     console.log(`🔑 Unlock command queued (DB) for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName}`);
     // ── Also publish via MQTT for instant delivery (no polling needed) ──
-    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid, userName: user.firstName });
+    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid });
 
     res.status(201).json({
       message: 'Ride started. Unlock command sent to bike.',
