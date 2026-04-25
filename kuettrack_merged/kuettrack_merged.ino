@@ -324,9 +324,14 @@ void loop() {
     }
   }
 
-  // ── Command polling — runs every CMD_POLL_INTERVAL when waiting ───
-  if (bikeState == STATE_RFID_VERIFIED) {
-    if (now - lastCmdPoll > CMD_POLL_INTERVAL) {
+  // ── Command polling — runs in IDLE and RFID_VERIFIED states ─────────
+  // CRITICAL FIX: poll in STATE_IDLE too so web-only login (no physical
+  // RFID tap) still delivers the unlock command to the solenoid.
+  // In STATE_RIDE_ACTIVE we don't need to poll — ride is already running.
+  if (bikeState == STATE_IDLE || bikeState == STATE_RFID_VERIFIED) {
+    // Poll faster when RFID was just tapped (STATE_RFID_VERIFIED)
+    unsigned long pollInterval = (bikeState == STATE_RFID_VERIFIED) ? CMD_POLL_INTERVAL : 3000UL;
+    if (now - lastCmdPoll > pollInterval) {
       lastCmdPoll = now;
       checkBikeCommand();
     }
@@ -391,8 +396,12 @@ void authenticateRfidCard(String uid) {
     Serial.println("[AUTH] GRANTED — " + currentUserName);
     lcdMsg("Verified!", currentUserName.substring(0, 16));
     feedbackAsync(true);
-    gpsWait(800);
+    gpsWait(600);
     lcdMsg("Open app to", "start your ride");
+
+    // Immediately check for a pending command — user may have already
+    // clicked "Start Ride" on the website before tapping the RFID card.
+    checkBikeCommand();
 
   } else if (code == 404) {
     Serial.println("[AUTH] DENIED — card not registered");
@@ -440,7 +449,14 @@ void checkBikeCommand() {
 
   if (cmd == "unlock") {
     currentRideId = rideId;
-    Serial.println("[CMD] UNLOCK received! Ride: " + rideId);
+    // rfidUid is returned by server so we know whose ride this is
+    // even if user authenticated via website (no physical RFID tap)
+    String serverRfid = doc["rfidUid"] | "";
+    if (serverRfid.length() > 0) {
+      currentRfidUid = serverRfid;
+    }
+
+    Serial.println("[CMD] UNLOCK received! Ride: " + rideId + " RFID: " + currentRfidUid);
     bikeState   = STATE_RIDE_ACTIVE;
     lastGpsSend = 0;
 
@@ -449,7 +465,9 @@ void checkBikeCommand() {
 
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print(("Ride: " + currentUserName).substring(0, 16));
+    // Show username if we have it, otherwise show rfid
+    String displayName = currentUserName.length() > 0 ? currentUserName : currentRfidUid;
+    lcd.print(("Ride: " + displayName).substring(0, 16));
     lcd.setCursor(0, 1);
     lcd.print("GPS updating...");
     Serial.println("[RIDE] Active — GPS streaming started.");

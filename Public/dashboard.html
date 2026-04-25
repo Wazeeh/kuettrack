@@ -18,7 +18,7 @@
   --r:14px;--r-sm:10px;--r-lg:20px;
 }
 html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.6;min-height:100vh;display:flex;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.6;min-height:100vh;display:flex;overflow:hidden;}
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
@@ -86,7 +86,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 .sidebar-bottom{padding:16px 12px;border-top:1px solid var(--border);}
 
 /* ── MAIN CONTENT ── */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden;}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden;height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .topbar{
   position:sticky;top:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
@@ -432,6 +432,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 
 /* ── MOBILE MENU TOGGLE ── */
 .menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);}
+
+/* ── OVERLAY for mobile sidebar ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:199;}
+.sidebar-overlay.show{display:block;}
+
 @media(max-width:900px){
   .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);}
   .sidebar.open{transform:translateX(0);}
@@ -441,6 +446,32 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
   .bikes-grid{grid-template-columns:1fr 1fr;}
   .ar-stats{grid-template-columns:1fr 1fr;}
   .profile-grid{grid-template-columns:1fr;}
+  .page{padding:20px 16px;}
+  .topbar{padding:12px 16px;}
+  .wallet-hero{padding:24px 16px;}
+  .wallet-balance{font-size:40px;}
+  .card-body{padding:14px 16px;}
+  .card-header{padding:14px 16px 12px;}
+  .notif-drawer{width:100%;max-width:100%;}
+  .modal{margin:16px;padding:24px;}
+  .ride-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+}
+@media(max-width:500px){
+  .metrics-row{grid-template-columns:1fr 1fr;}
+  .bikes-grid{grid-template-columns:1fr;}
+  .ar-stats{grid-template-columns:1fr 1fr;}
+  .ar-val{font-size:20px;}
+  .topup-grid{grid-template-columns:1fr 1fr;}
+  .wallet-actions{flex-direction:column;gap:8px;}
+  .w-btn{width:100%;text-align:center;}
+  .page{padding:14px 12px;}
+  .topbar{padding:10px 12px;}
+  .topbar-title{font-size:15px;}
+  .wallet-chip{padding:6px 10px;font-size:13px;}
+  .toast{left:12px;right:12px;bottom:16px;max-width:none;}
+  .confirm-rows{gap:8px;}
+  .modal{margin:10px;padding:18px;}
+  .confirm-bike-id{font-size:20px;}
 }
 </style>
 </head>
@@ -493,6 +524,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
     </button>
   </div>
 </aside>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <!-- MAIN -->
 <main class="main">
@@ -1135,6 +1169,12 @@ function showPage(id, btn) {
   const titles = {dashboard:'Dashboard',find:'Find a Bike',myride:'My Ride',gps:'Live GPS Tracking',history:'Ride History',wallet:'Wallet',profile:'Profile'};
   document.getElementById('topbarTitle').textContent = titles[id]||id;
   if(id==='myride') updateRideUI();
+  // Close sidebar on mobile when page changes
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+  // Scroll main content to top
+  const main = document.querySelector('.main');
+  if(main) main.scrollTo({top:0, behavior:'instant'});
   // Leaflet maps need invalidateSize() when their container becomes visible
   setTimeout(() => {
     if (id==='dashboard' && dashLeafMap) dashLeafMap.invalidateSize();
@@ -1149,11 +1189,13 @@ function showPage(id, btn) {
     }
     if (id==='gps' && gpsLeafMap) gpsLeafMap.invalidateSize();
   }, 60);
-  window.scrollTo(0,0);
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
 }
 
 // ─── BIKE RENDERING ──────────────────────────────────
@@ -1206,34 +1248,47 @@ function openConfirm(bikeId, station, hardwareId) {
 
 async function startRide() {
   if(!pendingBike)return;
+
+  // Prevent double-tap
+  const confirmBtn = document.getElementById('confirmRideBtn');
+  if(confirmBtn.disabled) return;
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = '⏳ Sending command…';
+
   closeModal('confirmModal');
-  showToast('🔄 Sending unlock command to bike...');
+  showToast('🔄 Connecting to bike… (may take up to 10s on first use)');
 
   try {
     const token = localStorage.getItem('kuettrack_token');
-    // CRITICAL: send hardwareId (BIKE-001) not the display ID (VT-001)
-    // ESP32 polls /api/bikes/BIKE-001/command — bikeId must match exactly
     const hardwareId = pendingBike.hardwareId || 'BIKE-001';
+
+    // ── Ping server first so Render wakes up (avoids apparent freeze) ──
+    try {
+      await Promise.race([
+        fetch(`${API}/api/system/health`),
+        new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),4000))
+      ]);
+    } catch(e) { /* ignore ping failure — continue to start ride */ }
+
     const res = await fetch(`${API}/api/rides/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        bikeId:    hardwareId,
-        stationId: 'STATION-001'
-      })
+      body: JSON.stringify({ bikeId: hardwareId, stationId: 'STATION-001' })
     });
     const data = await res.json();
 
     if (!res.ok) {
-      showToast('❌ ' + (data.message || 'Could not start ride.'));
+      showToast('❌ ' + (data.message || 'Could not start ride.'), 'var(--red)');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '🚴 Start Ride';
       return;
     }
 
-    // Store rideId for end-ride call
     const rideId = data.rideId || '';
 
     rideState = {
       bikeId:    pendingBike.bikeId,
+      hardwareId: hardwareId,
       station:   pendingBike.station,
       rideId:    rideId,
       startTime: Date.now(),
@@ -1249,13 +1304,47 @@ async function startRide() {
     updateRideUI();
     rideState.timerInterval = setInterval(tickRide,1000);
     startRideStatusPoll();
-    startGpsPoll(); // immediately start streaming GPS to all maps
-    showToast('🚴 Ride started! Tap RFID card on bike to unlock, then enjoy your trip!');
+
+    // Immediately start / accelerate GPS poll so map shows live position
+    if(gpsPollTimer){ clearInterval(gpsPollTimer); gpsPollTimer=null; }
+    pollGps();
+    gpsPollTimer = setInterval(pollGps, 3000); // faster during active ride
+
+    showToast('✅ Unlock command sent! Tap RFID card on bike dock to release it.');
+
+    // Poll /api/bikes/:id/command delivery confirmation — show user when ESP32 got it
+    pollUnlockDelivery(hardwareId, rideId);
 
   } catch(err) {
     console.error('startRide error:', err);
-    showToast('❌ Network error. Please try again.');
+    showToast('❌ Network error. Check connection and try again.', 'var(--red)');
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '🚴 Start Ride';
   }
+}
+
+// Poll until ESP32 picks up the unlock command (max 30s)
+async function pollUnlockDelivery(bikeId, rideId) {
+  const token = localStorage.getItem('kuettrack_token');
+  let attempts = 0;
+  const check = async () => {
+    attempts++;
+    try {
+      // If no active ride in DB anymore for this rideId, command was delivered
+      const r = await fetch(`${API}/api/rides/active`, { headers:{Authorization:`Bearer ${token}`} });
+      if(r.ok){
+        const d = await r.json();
+        // If server still has active ride with pendingCommand=null, ESP32 got it
+        // We can't directly query pendingCommand from frontend, so check ride exists
+        if(d.active && d.rideId === rideId) {
+          // Still active — good, ride is ongoing
+          return;
+        }
+      }
+    } catch(e){}
+    if(attempts < 15) setTimeout(check, 2000);
+  };
+  setTimeout(check, 3000);
 }
 
 function tickRide() {

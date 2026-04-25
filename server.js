@@ -988,7 +988,8 @@ const rideSchema = new mongoose.Schema({
   distanceKm:  { type: Number, default: 0 },
   fare:        { type: Number, default: 0 },
   status:      { type: String, enum: ['active', 'completed', 'error'], default: 'active' },
-  pendingCommand: { type: String, default: null }
+  pendingCommand: { type: String, default: null },
+  lockPending: { type: Boolean, default: false }  // persisted lock command for ESP32
 });
 const Ride = mongoose.model('Ride', rideSchema);
 
@@ -1095,15 +1096,25 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
 app.get('/api/bikes/:bikeId/command', async (req, res) => {
   const bikeId = req.params.bikeId;
 
-  // ── 1. Check for pending LOCK command (set when website ends a ride) ──
+  // ── 1. Check in-memory lock command (fast path) ──
   if (bikeLockCommands[bikeId]) {
     const info = bikeLockCommands[bikeId];
     delete bikeLockCommands[bikeId];
-    console.log(`📡 Lock command delivered to ${bikeId}`);
+    // Also clear DB persisted flag
+    await Ride.findByIdAndUpdate(info.rideId, { lockPending: false }).catch(()=>{});
+    console.log(`📡 Lock command (mem) delivered to ${bikeId}`);
     return res.json({ command: 'lock', rideId: info.rideId || '' });
   }
 
-  // ── 2. Check for pending UNLOCK command (set when website starts a ride) ──
+  // ── 2. Check DB-persisted lock command (survives server restarts) ──
+  const pendingLock = await Ride.findOne({ bikeId, lockPending: true }).sort({ endTime: -1 });
+  if (pendingLock) {
+    await Ride.findByIdAndUpdate(pendingLock._id, { lockPending: false });
+    console.log(`📡 Lock command (DB) delivered to ${bikeId}: rideId=${pendingLock._id}`);
+    return res.json({ command: 'lock', rideId: pendingLock._id.toString() });
+  }
+
+  // ── 3. Check for pending UNLOCK command (set when website starts a ride) ──
   const ride = await Ride.findOne({ bikeId, pendingCommand: 'unlock', status: 'active' });
   if (!ride) {
     return res.status(204).send();   // no pending command
@@ -1151,10 +1162,11 @@ app.post('/api/rides/end/user', authMiddleware, async (req, res) => {
       stationEnd: stationId || 'Unknown',
       duration,
       distanceKm,
-      fare
+      fare,
+      lockPending: true   // ← persisted in DB, survives Render restarts
     });
 
-    // ── Queue lock command so ESP32 locks solenoid on next poll ──
+    // ── Queue lock command (in-memory for speed + DB for persistence) ──
     bikeLockCommands[ride.bikeId] = { rideId: ride._id.toString() };
     console.log(`🔒 Lock command queued (web) for ${ride.bikeId} | user: ${user.firstName}`);
 
