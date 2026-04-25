@@ -431,16 +431,36 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
 .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s ease;}
 
 /* ── MOBILE MENU TOGGLE ── */
-.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);}
+.menu-toggle{display:none;background:none;border:1px solid var(--border2);border-radius:8px;padding:8px;cursor:pointer;color:var(--text);-webkit-tap-highlight-color:transparent;}
+/* Sidebar overlay backdrop */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:199;}
+.sidebar-overlay.open{display:block;}
 @media(max-width:900px){
-  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);}
-  .sidebar.open{transform:translateX(0);}
+  body{overflow-x:hidden;}
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;
+    transform:translateX(-100%);
+    height:100dvh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    display:flex;flex-direction:column;
+  }
+  .sidebar.open{transform:translateX(0);box-shadow:4px 0 32px rgba(0,0,0,0.5);}
+  .sidebar-nav{flex:1;overflow-y:auto;}
+  .sidebar-bottom{position:sticky;bottom:0;background:var(--bg2);border-top:1px solid var(--border);padding:12px;z-index:1;}
   .menu-toggle{display:flex;align-items:center;justify-content:center;}
   .metrics-row{grid-template-columns:repeat(2,1fr);}
   .dash-grid{grid-template-columns:1fr;}
   .bikes-grid{grid-template-columns:1fr 1fr;}
   .ar-stats{grid-template-columns:1fr 1fr;}
   .profile-grid{grid-template-columns:1fr;}
+  .page{padding:20px 16px;}
+  .topbar{padding:12px 16px;}
+  .nav-item{padding:14px 12px;font-size:15px;min-height:48px;-webkit-tap-highlight-color:transparent;}
+  .wallet-chip{padding:8px 12px;}
+  .icon-btn{width:42px;height:42px;}
+  .modal{margin:16px;max-width:calc(100vw - 32px);}
+  .topup-grid{grid-template-columns:1fr 1fr;}
 }
 </style>
 </head>
@@ -463,36 +483,39 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);line-height:1.
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
-    <button class="nav-item active" onclick="showPage('dashboard',this)">
+    <button class="nav-item active" onclick="showPage('dashboard',this);closeSidebar()">
       <span class="nav-icon">🏠</span> Dashboard
     </button>
-    <button class="nav-item" onclick="showPage('find',this)">
+    <button class="nav-item" onclick="showPage('find',this);closeSidebar()">
       <span class="nav-icon">🗺️</span> Find a Bike
     </button>
-    <button class="nav-item" onclick="showPage('myride',this)">
+    <button class="nav-item" onclick="showPage('myride',this);closeSidebar()">
       <span class="nav-icon">🚴</span> My Ride <span class="nav-badge" id="rideBadge" style="display:none;">Live</span>
     </button>
-    <button class="nav-item" onclick="showPage('gps',this);startGpsPoll()">
+    <button class="nav-item" onclick="showPage('gps',this);startGpsPoll();closeSidebar()">
       <span class="nav-icon">📡</span> Live GPS
       <span class="nav-badge" id="gpsBadge" style="display:none;background:rgba(0,136,255,0.18);color:var(--accent2);">Live</span>
     </button>
     <div class="nav-section-label" style="margin-top:8px;">Account</div>
-    <button class="nav-item" onclick="showPage('history',this)">
+    <button class="nav-item" onclick="showPage('history',this);closeSidebar()">
       <span class="nav-icon">📋</span> Ride History
     </button>
-    <button class="nav-item" onclick="showPage('wallet',this)">
+    <button class="nav-item" onclick="showPage('wallet',this);closeSidebar()">
       <span class="nav-icon">💳</span> Wallet
     </button>
-    <button class="nav-item" onclick="showPage('profile',this)">
+    <button class="nav-item" onclick="showPage('profile',this);closeSidebar()">
       <span class="nav-icon">👤</span> Profile
     </button>
   </nav>
   <div class="sidebar-bottom">
-    <button class="nav-item" onclick="logout()" style="color:var(--red);">
+    <button class="nav-item" onclick="logout()" style="color:var(--red);min-height:52px;font-size:15px;font-weight:600;">
       <span class="nav-icon">🚪</span> Logout
     </button>
   </div>
 </aside>
+
+<!-- SIDEBAR OVERLAY (tap to close on mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- MAIN -->
 <main class="main">
@@ -1153,7 +1176,20 @@ function showPage(id, btn) {
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+  // Prevent body scroll when sidebar is open on mobile
+  document.body.style.overflow = sb.classList.contains('open') ? 'hidden' : '';
+}
+
+function closeSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.remove('open');
+  ov.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ─── BIKE RENDERING ──────────────────────────────────
@@ -1483,10 +1519,11 @@ async function initiateStripeTopup(amt) {
 
     if (res.status === 503) {
       showPaymentError(
-        '💳 Stripe not configured',
-        'Add your Stripe key to <code>.env</code>, then restart the server:<br><br>' +
-        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">STRIPE_SECRET_KEY=sk_test_...</code>' +
-        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;">npm install stripe</code>'
+        '💳 Stripe not configured on Render',
+        'Your Stripe secret key is missing or invalid on Render.<br><br>' +
+        'Go to <b>Render Dashboard → Your Service → Environment</b> and add:<br><br>' +
+        '<code style="background:var(--bg3);padding:6px 10px;border-radius:6px;display:block;margin-top:4px;word-break:break-all;">STRIPE_SECRET_KEY = sk_live_... (or sk_test_...)</code>' +
+        '<br>Then click <b>Save Changes</b> — Render will redeploy automatically.'
       );
       return;
     }
