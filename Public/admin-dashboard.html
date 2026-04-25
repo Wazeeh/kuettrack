@@ -622,8 +622,8 @@ let activeRidersPollTimer = null;
 
 // ─── Auth check ──────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  adminToken = localStorage.getItem('kuettrack_token');
-  const stored = localStorage.getItem('kuettrack_user');
+  adminToken = localStorage.getItem('kuettrack_admin_token');
+  const stored = localStorage.getItem('kuettrack_admin');
   if (!adminToken || !stored) { logout(); return; }
   try {
     adminUser = JSON.parse(stored);
@@ -678,8 +678,8 @@ function closeSidebar() {
 
 // ─── Logout ──────────────────────────────────────────────────────────────────
 function logout() {
-  localStorage.removeItem('kuettrack_token');
-  localStorage.removeItem('kuettrack_user');
+  localStorage.removeItem('kuettrack_admin_token');
+  localStorage.removeItem('kuettrack_admin');
   window.location.href = 'index.html';
 }
 
