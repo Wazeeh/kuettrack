@@ -717,19 +717,28 @@ app.post('/api/rfid/scan', async (req, res) => {
       }
     };
 
-    // ─── Lock/Unlock Toggle Logic ─────────────────────────────
-    // First tap  → no active ride  → authenticate only (ESP32 → STATE_RFID_VERIFIED)
-    //                                 User then selects bike on dashboard to start ride.
-    // Second tap → active ride found → end ride + lock solenoid
+    // ─── 3-State Lock/Unlock Logic ────────────────────────────
+    // State A: active ride with pendingCommand:'unlock'
+    //          → dashboard selected a bike, user taps RFID to physically unlock
+    // State B: active ride with no pendingCommand (ride in progress)
+    //          → user taps RFID to end the ride and lock
+    // State C: no active ride at all
+    //          → just authenticate (ESP32 → STATE_RFID_VERIFIED, shows "Select bike in app")
     const activeRide = await Ride.findOne({ userId: user._id, status: 'active' });
 
     let lockAction = null;
-    let duration, fare;   // declared here so they are in scope for res.json below
+    let duration, fare;
 
-    if (activeRide) {
-      // User is returning the bike — end the ride and lock
+    if (activeRide && activeRide.pendingCommand === 'unlock') {
+      // State A — user selected bike on dashboard, now tapping to unlock solenoid
+      lockAction = 'unlock';
+      await Ride.findByIdAndUpdate(activeRide._id, { pendingCommand: null });
+      console.log(`🔓 RFID tap unlocked bike: ${rfidUid} → ${user.firstName} | ride=${activeRide._id}`);
+
+    } else if (activeRide && !activeRide.pendingCommand) {
+      // State B — ride in progress, tap to end ride and lock solenoid
       lockAction = 'lock';
-      const endTime   = new Date();
+      const endTime    = new Date();
       const elapsedSec = Math.floor((endTime - activeRide.startTime) / 1000);
       const mins = Math.floor(elapsedSec / 60);
       const secs = elapsedSec % 60;
@@ -747,23 +756,24 @@ app.post('/api/rfid/scan', async (req, res) => {
         distanceKm,
         fare
       });
-      console.log(`🔒 Ride ended: ${rfidUid} | duration=${duration} fare=৳${fare} newBalance=৳${newBalance}`);
       // Publish MQTT lock immediately
       mqttPublish(`kuettrack/${activeRide.bikeId || 'BIKE-001'}/cmd`, {
         command: 'lock', rideId: activeRide._id.toString()
       });
-    }
-    // else: no active ride — just authenticate, no ride creation, no unlock.
-    // ESP32 will enter STATE_RFID_VERIFIED and display "Open app to start your ride".
-    // The dashboard POST /api/rides/start will create the ride and send the unlock command.
+      console.log(`🔒 Ride ended: ${rfidUid} | duration=${duration} fare=৳${fare} newBalance=৳${newBalance}`);
 
-    console.log(`✅ RFID authorized: ${rfidUid} → ${user.firstName} ${user.lastName} | lockAction: ${lockAction || 'none (verify only)'}`);
+    }
+    // State C — no active ride, verify only (lockAction stays null)
+
+    console.log(`✅ RFID authorized: ${rfidUid} → ${user.firstName} | action: ${lockAction || 'verify-only'}`);
     res.json({
       authorized: true,
       ...(lockAction && { lockAction }),
-      message: lockAction === 'lock'
-        ? 'Bike locked. Ride ended.'
-        : 'Authenticated. Select a bike in the app to start your ride.',
+      message: lockAction === 'unlock'
+        ? `Bike unlocked. Enjoy your ride, ${user.firstName}!`
+        : lockAction === 'lock'
+          ? 'Bike locked. Ride ended.'
+          : 'Authenticated. Select a bike in the app, then tap again to unlock.',
       userName: user.firstName,
       ...(lockAction === 'lock' && { duration, fare })
     });
@@ -1238,12 +1248,10 @@ app.post('/api/rides/start', authMiddleware, async (req, res) => {
       pendingCommand: 'unlock'   // ← persisted in DB, survives Render restarts
     });
 
-    console.log(`🔑 Unlock command queued (DB) for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName}`);
-    // ── Also publish via MQTT for instant delivery (no polling needed) ──
-    mqttPublish(`kuettrack/${bikeId}/cmd`, { command: 'unlock', rideId: ride._id.toString(), rfidUid, userName: user.firstName });
+    console.log(`🔑 Ride queued (DB) for ${bikeId} | rideId: ${ride._id} | user: ${user.firstName} ${user.lastName} — waiting for RFID tap to unlock`);
 
     res.status(201).json({
-      message: 'Ride started. Unlock command sent to bike.',
+      message: 'Bike selected. Tap your RFID card on the bike to unlock.',
       rideId: ride._id,
       user: { firstName: user.firstName, plan: user.plan, walletBalance: user.walletBalance }
     });

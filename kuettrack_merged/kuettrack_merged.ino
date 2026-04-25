@@ -269,12 +269,14 @@ void loop() {
 
         } else if (bikeState == STATE_RFID_VERIFIED) {
           if (uid == currentRfidUid) {
-            lcdMsg("Cancelled", "Tap again to start");
-            feedbackAsync(false);
-            bikeState = STATE_IDLE;
-            currentRfidUid = ""; currentUserName = "";
-            gpsWait(1500);
-            lcdMsg("KuetTrack Ready", "Tap RFID card");
+            // Re-check auth — if user has selected a bike on the dashboard,
+            // server will now return lockAction:"unlock" and solenoid opens.
+            // If not yet selected, server returns no lockAction and we stay verified.
+            lcdMsg("Checking...", uid.substring(0, 16));
+            bikeState       = STATE_AUTH_PENDING;
+            authRequestedAt = now;
+            authPending     = true;
+            httpRfidAuth(uid);
           }
 
         } else if (bikeState == STATE_RIDE_ACTIVE) {
@@ -457,11 +459,11 @@ void httpRfidAuth(String uid) {
     gpsWait(3000); lcdMsg("KuetTrack Ready", "Tap RFID card");
 
   } else {
-    // Authorized but no lockAction (e.g. verified, waiting for app to start)
+    // Authorized but no lockAction — user hasn't selected a bike yet
     bikeState = STATE_RFID_VERIFIED;
     lcdMsg("Verified!", currentUserName.substring(0,16));
     feedbackAsync(true);
-    gpsWait(800); lcdMsg("Open app to", "start your ride");
+    gpsWait(800); lcdMsg("Select bike in", "app, tap to unlock");
   }
   reinitRFID();
 }
